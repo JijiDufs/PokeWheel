@@ -100,7 +100,6 @@ const PD_GEN1: [number, string, string[], number][] = [
 
 const PM_GEN1: Record<number, Pokemon> = {};
 PD_GEN1.forEach(a => { PM_GEN1[a[0]] = { id: a[0], n: a[1], t: a[2], e: a[3] || null, bstMod: 1 }; });
-
 const LEGS_GEN1: [number, string, string[]][] = [[144,"Artikodin",["Glace","Vol"]],[145,"Électhor",["Électrik","Vol"]],[146,"Sulfura",["Feu","Vol"]],[150,"Mewtwo",["Psy"]],[151,"Mew",["Psy"]]];
 LEGS_GEN1.forEach(a => { PM_GEN1[a[0]] = { id: a[0], n: a[1], t: a[2], e: null, bstMod: 1 }; });
 
@@ -125,16 +124,7 @@ const BST_GEN1: Record<number, number> = {
   149: 600, 150: 680, 151: 600
 };
 
-// Utilisé pour la force des équipes adverses
-const NBST_GEN1: Record<string, number> = {
-  "Racaillou":300, "Onix":385, "Stari":340, "Staross":520, "Voltorbe":330, "Raichu":485,
-  "Empiflor":490, "Rafflesia":490, "Smogo":340, "Grotadmorv":500, "Smogogo":490,
-  "Kadabra":400, "Alakazam":500, "Caninos":350, "Arcanin":555, "Rhinocorne":345,
-  "Nidoqueen":505, "Nidoking":505, "Rhinoféros":485, "Nosferapti":245, "Rattatac":413,
-  "Abo":288, "Kangourex":490, "Crustabri":525, "Lokhlass":535, "Tygnon":455, "Mackogneur":505,
-  "Nosferalto":455, "Ectoplasma":500, "Ptéra":515, "Dracolosse":600, "Roucarnage":479,
-  "Léviator":540, "Florizarre":525, "Dracaufeu":534, "Tortank":530, "Roucoups":349
-};
+const NBST_GEN1: Record<string, number> = { "Bulbizarre":318,"Salamèche":309,"Carapuce":314,"Rattata":253,"Roucool":251,"Nosferapti":245,"Racaillou":300,"Abra":310,"Machoc":305,"Fantominus":310 };
 
 const GYMS_GEN1: Gym[] = [
   { nm:"Pierre",ct:"Argenta",bd:"Roche",tp:"Roche",spr:"brock",df:-0.10,tm:[{n:"Racaillou",t:["Roche","Sol"]},{n:"Onix",t:["Roche","Sol"]}] },
@@ -183,11 +173,14 @@ const STORY_GEN1: StoryEvent[] = [
 ];
 
 function getRivTmGen1(sid: number | null, st: number): FoePokemon[] {
+  // Le rival choisit le starter avec l'avantage du type
+  const rid = sid === 1 ? 4 : sid === 4 ? 7 : 1;
+  const s1 = PM_GEN1[rid], s2 = s1?.e ? PM_GEN1[s1.e] : s1, s3 = s2?.e ? PM_GEN1[s2.e] : s2;
   const ts = [
-    [{n:"Salamèche",t:["Feu"]}],
-    [{n:"Reptincel",t:["Feu"]},{n:"Roucoups",t:["Normal","Vol"]},{n:"Rattatac",t:["Normal"]}],
-    [{n:"Dracaufeu",t:["Feu","Vol"]},{n:"Roucarnage",t:["Normal","Vol"]},{n:"Kadabra",t:["Psy"]}],
-    [{n:"Dracaufeu",t:["Feu","Vol"]},{n:"Roucarnage",t:["Normal","Vol"]},{n:"Alakazam",t:["Psy"]},{n:"Rhinoféros",t:["Sol","Roche"]}]
+    [{n:s1.n,t:s1.t}],
+    [{n:s2.n,t:s2.t},{n:"Roucoups",t:["Normal","Vol"]},{n:"Rattatac",t:["Normal"]}],
+    [{n:s3.n,t:s3.t},{n:"Roucarnage",t:["Normal","Vol"]},{n:"Kadabra",t:["Psy"]}],
+    [{n:s3.n,t:s3.t},{n:"Roucarnage",t:["Normal","Vol"]},{n:"Alakazam",t:["Psy"]},{n:"Rhinoféros",t:["Sol","Roche"]}]
   ];
   return ts[Math.min(st,3)];
 }
@@ -197,9 +190,7 @@ export const gen1Data: GameData = {
   SE: SE_GEN1, PD: PD_GEN1, PM: PM_GEN1, BST: BST_GEN1, NBST: NBST_GEN1,
   LEGS: LEGS_GEN1, GYMS: GYMS_GEN1, EVIL_TEAM: ROCKET, E4: E4_GEN1, CHAMP: CHAMP_GEN1,
   STORY: STORY_GEN1, 
-  // ID des Pokémon capturables dans les herbes
   CATCH_IDS: [10,13,16,19,21,23,25,27,29,32,35,37,39,41,43,46,48,50,52,56,58,63,66,69,74,77,81,83,84,88,92,96,100,102,104,108,109,111,113,114,115,122,123,124,125,126,127,128,132], 
-  // ID des Pokémon pêchables
   FISH_IDS: [7,54,60,72,79,86,90,98,116,118,120,129,131,147], 
   BABY_IDS: [],
   getRivTm: getRivTmGen1
