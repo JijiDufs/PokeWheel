@@ -44,16 +44,14 @@ export default function App() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // --- NOUVEAUTÉ : Validation automatique de la roue ---
+  const mob = ww < 850;
+
   useEffect(() => {
     if (phase === "wheel" && wheelState.done && wCfg) {
-      const timer = setTimeout(() => {
-        wCfg.onDone(wCfg.items[wCfg.winIdx]);
-      }, 700); // 1.2 seconde de pause pour lire le résultat
+      const timer = setTimeout(() => { wCfg.onDone(wCfg.items[wCfg.winIdx]); }, 1200);
       return () => clearTimeout(timer);
     }
   }, [phase, wheelState.done, wCfg]);
-  // ----------------------------------------------------
 
   useEffect(() => {
     if (!gen) return;
@@ -63,19 +61,17 @@ export default function App() {
     else if (ev.y === "s") {
       setMsg("La mallette s'ouvre...");
       const starters = [gen.PM[gen.PD[0][0]], gen.PM[gen.PD[3][0]], gen.PM[gen.PD[6][0]]]; 
-      showWheel(starters, Math.floor(Math.random()*3), "🔥 Starter ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n+" te choisit !"); setPhase("msg"); });
+      showWheel(starters, Math.floor(Math.random()*3), "🔥 Starter ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n+" choisit Jules !"); setPhase("msg"); });
     }
-    else if (ev.y === "r") { const rt = gen.getRivTm(sid, ev.s!); setMsg("⚔️ Rival te défie !"); setCCtx({nm:"Rival",foes:rt,d:[-0.10,-0.05,0,0.05][Math.min(ev.s!,3)]||0,ctx:"rival",spr:"blue"}); setPhase("cpre"); }
+    else if (ev.y === "r") { const rt = gen.getRivTm(sid, ev.s!); setMsg("⚔️ Rival défie Jules !"); setCCtx({nm:"Rival",foes:rt,d:[-0.10,-0.05,0,0.05][Math.min(ev.s!,3)]||0,ctx:"rival",spr:"blue"}); setPhase("cpre"); }
     else if (ev.y === "g") { const g = gen.GYMS[ev.i!]; setMsg("🏟️ "+g.nm+" ("+g.ct+")"); setCCtx({nm:g.nm,foes:g.tm,d:g.df,ctx:"gym",gi:ev.i!,spr:g.spr}); setPhase("cpre"); }
     else if (ev.y === "G") { const c = gen.EVIL_TEAM[ev.i!]; setMsg("👾 "+c.nm); setCCtx({nm:c.nm,foes:c.tm,d:0,ctx:"evil",spr:c.spr}); setPhase("cpre"); }
     else if (ev.y === "R") { setMsg(ev.x!); setRSpins(ev.p!); setPhase("route"); }
     else if (ev.y === "S") { setMsg("⛰️ Boss Final Team !"); setCCtx({nm:gen.EVIL_TEAM[gen.EVIL_TEAM.length-1].nm,foes:gen.EVIL_TEAM[gen.EVIL_TEAM.length-1].tm,d:0.10,ctx:"spear",spr:gen.EVIL_TEAM[gen.EVIL_TEAM.length-1].spr}); setPhase("cpre"); }
     else if (ev.y === "4") { const e = gen.E4[ev.i!]; setMsg("🏛️ "+e.nm); setCCtx({nm:e.nm,foes:e.tm,d:0.10,ctx:"e4",spr:e.spr}); setPhase("cpre"); }
     else if (ev.y === "C") { setMsg("👑 Maître !"); setCCtx({nm:gen.CHAMP.nm,foes:gen.CHAMP.tm,d:0.15,ctx:"champ",spr:gen.CHAMP.spr}); setPhase("cpre"); }
-    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS !\nTu es le nouveau Maître ! 🏆"); setPhase("win"); }
+    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS !\nJules est le nouveau Maître ! 🏆"); setPhase("win"); }
   }, [phase, step, gen, sid]);
-
-  const mob = ww < 850;
 
   function reset() { setTeam([]); setBadges([]); setInv({p:1,sp:0,b:0,r:0}); setSid(null); setStep(0); setPhase("proc"); setWCfg(null); setWheelState({ spinning: false, done: false }); setMsg(""); setRSpins(0); setCCtx(null); setWheelKey(0); setSwapData(null); setRetriesLeft(0); setMenuOpen(false); }
   function backToMenu() { setGen(null); reset(); }
@@ -83,7 +79,7 @@ export default function App() {
   function getEffBst(p: Pokemon): number { return Math.round((gen!.BST[p.id] || 300) * (p.bstMod || 1)); }
   function makePoke(pk: Pokemon): Pokemon { return { id:pk.id, n:pk.n, t:pk.t, e:pk.e, bstMod: pk.bstMod || 1 }; }
   function addPoke(pk: Pokemon) { setTeam(prev => [...prev, makePoke(pk)]); }
-  function capturePoke(pk: Pokemon, afterMsg: string, afterFn: () => void) { if (team.length < 6) { addPoke(pk); setMsg(afterMsg); afterFn(); } else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg(pk.n + " veut te rejoindre !\nL'équipe est pleine."); setPhase("swap"); } }
+  function capturePoke(pk: Pokemon, afterMsg: string, afterFn: () => void) { if (team.length < 6) { addPoke(pk); setMsg(afterMsg); afterFn(); } else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg(pk.n + " veut rejoindre Jules !\nL'équipe est pleine."); setPhase("swap"); } }
   function boostTeamBst() { setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * 1.03 }))); }
   function nextStep() { setStep(s => s+1); setPhase("proc"); }
   function showWheel(items: WheelItem[], winIdx: number, label: string, colFn: (item:WheelItem,i:number)=>string, onDone: (item:WheelItem)=>void, sizes?: number[]|null) { setWCfg({items, winIdx, label, colFn, onDone, sizes: sizes||null}); setWheelState({ spinning: false, done: false }); setWheelKey(k => k+1); setPhase("wheel"); }
@@ -137,7 +133,7 @@ export default function App() {
       else if (a==="fish") { const pool = sampleArr(gen!.FISH_IDS,8).map(id=>gen!.PM[id]).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎣 Pêche !", ()=>"#3498DB", res2=>capturePoke(res2 as Pokemon, "🎣 "+res2.n+" pêché !", finRoute)); }
       else if (a==="trainer") {
         const rt: FoePokemon[] = []; for (let i=0;i<Math.floor(Math.random()*2)+1;i++) { const rp=gen!.PM[gen!.CATCH_IDS[Math.floor(Math.random()*gen!.CATCH_IDS.length)]]; if(rp)rt.push({n:rp.n,t:rp.t}); }
-        if(!rt.length) rt.push({n:"Pikachu",t:["Électrik"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Un Dresseur te défie !"); setPhase("cpre");
+        if(!rt.length) rt.push({n:"Pikachu",t:["Électrik"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Un Dresseur défie Jules !"); setPhase("cpre");
       }
       else if (a==="shop") {
         const its = badges.length>=8 ? [{label:"Potion",k:"p"},{label:"S. Potion",k:"sp"},{label:"Rappel",k:"r"}] : [{label:"Potion",k:"p"},{label:"S. Potion",k:"sp"},{label:"Pokéball",k:"b"},{label:"Rappel",k:"r"}];
@@ -170,17 +166,87 @@ export default function App() {
     });
   }
 
+  // --- NOUVEL ÉCRAN D'ACCUEIL ---
   if (!gen) {
     return (
-      <div style={{height:"100dvh", background:"#2C3E50", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"'Courier New', monospace", color:"#FFF"}}>
-        <h1 style={{textShadow:"2px 2px 0 #000", marginBottom: 40, textAlign:"center"}}>POKÉMON RANDOMIZER<br/><span style={{fontSize: 16, color:"#F1C40F"}}>Générations</span></h1>
-        <div style={{display:"flex", gap: 20, flexWrap: "wrap", justifyContent: "center"}}>
-          <button onClick={() => setGen(gen1Data)} style={{padding: "20px 40px", fontSize: 20, fontWeight: "bold", cursor: "pointer", background: "#3498DB", color: "#FFF", border: "4px solid #F0ECD6", borderRadius: 12, boxShadow: "0 6px 0 #1A252F"}}>
-            Kanto (Génération 1)
-          </button>
-          <button onClick={() => setGen(gen4Data)} style={{padding: "20px 40px", fontSize: 20, fontWeight: "bold", cursor: "pointer", background: "#E3350D", color: "#FFF", border: "4px solid #F0ECD6", borderRadius: 12, boxShadow: "0 6px 0 #1A252F"}}>
-            Sinnoh (Génération 4)
-          </button>
+      <div style={{
+        height: "100dvh",
+        background: "linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Courier New', Courier, monospace",
+        color: "#FFF",
+        padding: 20
+      }}>
+        <h1 style={{
+          fontSize: mob ? 32 : 48,
+          textShadow: "3px 3px 0 #000, 6px 6px 0 rgba(0,0,0,0.5)",
+          marginBottom: 10,
+          textAlign: "center",
+          letterSpacing: 2
+        }}>
+          POKÉMON RANDOMIZER
+        </h1>
+        <p style={{ fontSize: 18, color: "#F1C40F", textShadow: "1px 1px 0 #000", marginBottom: 40, textAlign: "center" }}>
+          Quelle aventure Jules va-t-il choisir ?
+        </p>
+
+        <div style={{ display: "flex", gap: 30, flexWrap: "wrap", justifyContent: "center" }}>
+          {/* Carte Gen 1 */}
+          <div 
+            onClick={() => setGen(gen1Data)}
+            onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-10px)"}
+            onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+            style={{
+              width: 260,
+              height: 380,
+              background: "linear-gradient(180deg, #E3350D 0%, #9E1B0A 100%)",
+              border: "6px solid #F0ECD6",
+              borderRadius: 16,
+              boxShadow: "0 10px 20px rgba(0,0,0,0.5), inset 0 0 0 4px #5C0B00",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: 20,
+              transition: "transform 0.2s",
+              position: "relative"
+            }}
+          >
+             <div style={{fontSize: 50, marginTop: 20}}>🐉</div>
+             <h2 style={{marginTop: "auto", fontSize: 26, textShadow: "2px 2px 0 #000"}}>KANTO</h2>
+             <div style={{background:"#F1C40F", color:"#000", padding:"4px 12px", borderRadius:20, fontWeight:"bold", fontSize: 12, marginTop: 10}}>GÉNÉRATION 1</div>
+             <div style={{fontSize: 11, marginTop: 15, opacity: 0.9, textAlign:"center"}}>Style Rétro • 151 Pokémon</div>
+          </div>
+
+          {/* Carte Gen 4 */}
+          <div 
+            onClick={() => setGen(gen4Data)}
+            onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-10px)"}
+            onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+            style={{
+              width: 260,
+              height: 380,
+              background: "linear-gradient(180deg, #3498DB 0%, #1A5276 100%)",
+              border: "6px solid #F0ECD6",
+              borderRadius: 16,
+              boxShadow: "0 10px 20px rgba(0,0,0,0.5), inset 0 0 0 4px #154360",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: 20,
+              transition: "transform 0.2s",
+              position: "relative"
+            }}
+          >
+             <div style={{fontSize: 50, marginTop: 20}}>💎</div>
+             <h2 style={{marginTop: "auto", fontSize: 26, textShadow: "2px 2px 0 #000"}}>SINNOH</h2>
+             <div style={{background:"#F1C40F", color:"#000", padding:"4px 12px", borderRadius:20, fontWeight:"bold", fontSize: 12, marginTop: 10}}>GÉNÉRATION 4</div>
+             <div style={{fontSize: 11, marginTop: 15, opacity: 0.9, textAlign:"center"}}>Table Moderne • Capacités Phys/Spé</div>
+          </div>
         </div>
       </div>
     );
@@ -242,7 +308,6 @@ export default function App() {
       <div style={{padding:mob?"8px 8px calc(8px + env(safe-area-inset-bottom))":"16px",background:"#FFF",borderTop:"4px solid #2C3E50",display:"flex",flexDirection:"column",gap:10,flexShrink:0,zIndex:10}}>
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",minHeight:42,alignItems:"center"}}>
           
-          {/* BOUTON MODIFIÉ ICI : Il disparaît quand la roue a fini de tourner */}
           {phase === "wheel" && !wheelState.done && (
             <button onClick={() => { if (!wheelState.spinning) wheelRef.current?.spin(); }} disabled={wheelState.spinning} style={{...btnStyle("#E3350D", "#9E1B0A"), opacity: wheelState.spinning ? 0.6 : 1}}>
               {wheelState.spinning ? "🎰 Rotation..." : "🎰 Tourner la roue"}
