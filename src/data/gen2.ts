@@ -219,22 +219,25 @@ const STORY_GEN2: StoryEvent[] = [
 ];
 
 function getRivTmGen2(sid: number | null, st: number): FoePokemon[] {
+  const rid = sid === 152 ? 155 : sid === 155 ? 158 : 152;
+  const s1 = PM_GEN2[rid], s2 = s1?.e ? PM_GEN2[s1.e] : s1, s3 = s2?.e ? PM_GEN2[s2.e] : s2;
   const ts = [
-    [{n:"Kaiminus",t:["Eau"]}],
-    [{n:"Fantominus",t:["Spectre","Poison"]},{n:"Crocrodil",t:["Eau"]}],
-    [{n:"Nosferalto",t:["Poison","Vol"]},{n:"Spectrum",t:["Spectre","Poison"]},{n:"Aligatueur",t:["Eau"]}],
-    [{n:"Nostenfer",t:["Poison","Vol"]},{n:"Ectoplasma",t:["Spectre","Poison"]},{n:"Alakazam",t:["Psy"]},{n:"Aligatueur",t:["Eau"]}]
+    [{n:s1.n,t:s1.t}],
+    [{n:"Fantominus",t:["Spectre","Poison"]},{n:s2.n,t:s2.t}],
+    [{n:"Nosferalto",t:["Poison","Vol"]},{n:"Spectrum",t:["Spectre","Poison"]},{n:s3.n,t:s3.t}],
+    [{n:"Nostenfer",t:["Poison","Vol"]},{n:"Ectoplasma",t:["Spectre","Poison"]},{n:"Alakazam",t:["Psy"]},{n:s3.n,t:s3.t}]
   ];
   return ts[Math.min(st,3)];
 }
 
-export const gen2Data = {
+export const gen2Data: GameData = {
   id: "gen2", name: "Johto (Génération 2)", themeColor: "#D4AF37",
   SE: SE_GEN2, PD: PD_GEN2, PM: PM_GEN2, BST: BST_GEN2, NBST: NBST_GEN2,
   LEGS: LEGS_GEN2, GYMS: GYMS_GEN2, EVIL_TEAM: ROCKET_GEN2, E4: E4_GEN2, CHAMP: CHAMP_GEN2,
+  FINAL_BOSS: RED_BATTLE,
   STORY: STORY_GEN2,
   CATCH_IDS: [16,19,41,63,66,74,92,152,155,158,161,163,165,167,177,179,187,193,198,206,207,216,220,227,228,231],
   FISH_IDS: [72,129,170,183,194,211,222,223,226],
   BABY_IDS: [172,173,174,175,236,238,239,240],
   getRivTm: getRivTmGen2
-} as unknown as GameData;
+};
