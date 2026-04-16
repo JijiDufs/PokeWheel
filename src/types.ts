@@ -18,11 +18,21 @@ export interface GameData {
   EVIL_TEAM: { nm: string; spr: string; tm: FoePokemon[] }[];
   E4: { nm: string; tp: string; spr: string; tm: FoePokemon[] }[];
   CHAMP: { nm: string; spr: string; tm: FoePokemon[] };
+  FINAL_BOSS?: { nm: string; spr: string; tm: FoePokemon[] }; // Ajouté pour corriger l'erreur de la Gen 2
   STORY: StoryEvent[];
   CATCH_IDS: number[];
   FISH_IDS: number[];
   BABY_IDS: number[];
   getRivTm: (sid: number | null, st: number) => FoePokemon[];
+}
+
+export interface Theme {
+  bg: string;
+  panelBg: string;
+  border: string;
+  font: string;
+  btnBg: string;
+  text: string;
 }
 
 export interface WheelItem { n?: string; label?: string; id?: number; t?: string[]; e?: number | null; val?: boolean; k?: string; a?: string; bstMod?: number; }
