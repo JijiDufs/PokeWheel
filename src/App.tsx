@@ -302,12 +302,13 @@ const Wheel = forwardRef<WheelRef, WheelProps>(({ items, winIdx, onDone, label, 
   useImperativeHandle(ref, () => ({ spin }));
   useEffect(() => { return () => { if (animRef.current) cancelAnimationFrame(animRef.current); }; }, []);
 
+  // CORRECTION ICI: Ajout de zIndex et de position relative pour passer au-dessus des ombres internes
   return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,width:"100%", height:"100%", maxHeight:"100%", justifyContent:"center"}}>
-      {label && <div style={{fontSize:16,fontWeight:800,color:"#F0ECD6",textAlign:"center",background:"#2C3E50",border:"2px solid #1A252F",padding:"6px 16px",borderRadius:8}}>{label}</div>}
+    <div style={{position: "relative", zIndex: 10, display:"flex",flexDirection:"column",alignItems:"center",gap:8,width:"100%", height:"100%", maxHeight:"100%", justifyContent:"center"}}>
+      {label && <div style={{position: "relative", zIndex: 15, fontSize:16,fontWeight:800,color:"#F0ECD6",textAlign:"center",background:"#2C3E50",border:"2px solid #1A252F",padding:"6px 16px",borderRadius:8, boxShadow: "0 4px 0 rgba(0,0,0,0.2)"}}>{label}</div>}
       <canvas 
         ref={canvasRef} width={sz} height={sz} onClick={spin} 
-        style={{maxWidth:"100%", maxHeight:"100%", objectFit:"contain", cursor: (!spinning && !done) ? "pointer" : "default"}} 
+        style={{position: "relative", zIndex: 10, maxWidth:"100%", maxHeight:"100%", objectFit:"contain", cursor: (!spinning && !done) ? "pointer" : "default"}} 
       />
     </div>
   );
