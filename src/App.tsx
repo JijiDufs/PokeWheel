@@ -52,10 +52,13 @@ export default function App() {
   }, []);
 
   const mob = ww < 850;
+  
+  // Nom du Héros selon la génération
+  const playerName = gen?.id === "gen1" ? "Red" : gen?.id === "gen2" ? "Gold" : "Lucas";
 
   function sprUrl(id: number) {
     if (gen?.id === "gen1") return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/${id}.png`;
-    if (gen?.id === "gen2") return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ii/crystal/transparent/${id}.png`;
+    // Retourne les sprites normaux (modernes) pour les Gen 2 et Gen 4
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   }
 
@@ -64,29 +67,30 @@ export default function App() {
     if (phase !== "proc") return;
     const ev = gen.STORY[step]; if (!ev) return;
     
-    if (ev.y === "m") { setMsg(ev.x!); setPhase("msg"); }
+    // Remplacement dynamique des textes
+    const txt = ev.x ? ev.x.replace(/Jules/g, playerName) : "";
+    
+    if (ev.y === "m") { setMsg(txt); setPhase("msg"); }
     else if (ev.y === "s") {
       setMsg("La mallette s'ouvre...");
-      
-      // SÉLECTION CORRECTE DES STARTERS
+      // Ciblage exact des Starters selon la Gen
       let starters: Pokemon[] = [];
       if (gen.id === "gen1") starters = [gen.PM[1], gen.PM[4], gen.PM[7]];
       else if (gen.id === "gen2") starters = [gen.PM[152], gen.PM[155], gen.PM[158]];
-      else if (gen.id === "gen4") starters = [gen.PM[387], gen.PM[390], gen.PM[393]];
-      else starters = [gen.PM[gen.PD[0][0]], gen.PM[gen.PD[3][0]], gen.PM[gen.PD[6][0]]]; 
+      else starters = [gen.PM[387], gen.PM[390], gen.PM[393]]; // Gen 4
       
-      showWheel(starters, Math.floor(Math.random()*3), "🔥 Starter ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n+" te choisit !"); setPhase("msg"); });
+      showWheel(starters, Math.floor(Math.random()*3), "🔥 Starter ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n + ` choisit ${playerName} !`); setPhase("msg"); });
     }
-    else if (ev.y === "r") { const rt = gen.getRivTm(sid, ev.s!); setMsg("⚔️ Ton rival te défie !"); setCCtx({nm:"Rival",foes:rt,d:[-0.10,-0.05,0,0.05][Math.min(ev.s!,3)]||0,ctx:"rival",spr:"blue"}); setPhase("cpre"); }
+    else if (ev.y === "r") { const rt = gen.getRivTm(sid, ev.s!); setMsg(`⚔️ Le Rival défie ${playerName} !`); setCCtx({nm:"Rival",foes:rt,d:[-0.10,-0.05,0,0.05][Math.min(ev.s!,3)]||0,ctx:"rival",spr:"blue"}); setPhase("cpre"); }
     else if (ev.y === "g") { const g = gen.GYMS[ev.i!]; setMsg("🏟️ "+g.nm+" ("+g.ct+")"); setCCtx({nm:g.nm,foes:g.tm,d:g.df,ctx:"gym",gi:ev.i!,spr:g.spr}); setPhase("cpre"); }
     else if (ev.y === "G") { const c = gen.EVIL_TEAM[ev.i!]; setMsg("👾 "+c.nm); setCCtx({nm:c.nm,foes:c.tm,d:0,ctx:"evil",spr:c.spr}); setPhase("cpre"); }
-    else if (ev.y === "R") { setMsg(ev.x!); setRSpins(ev.p!); setPhase("route"); }
+    else if (ev.y === "R") { setMsg(txt); setRSpins(ev.p!); setPhase("route"); }
     else if (ev.y === "S") { const boss = ev.i === 1 && gen.FINAL_BOSS ? gen.FINAL_BOSS : gen.EVIL_TEAM[gen.EVIL_TEAM.length-1]; setMsg(`⛰️ ${boss.nm} !`); setCCtx({nm:boss.nm,foes:boss.tm,d:0.15,ctx:"spear",spr:boss.spr}); setPhase("cpre"); }
     else if (ev.y === "4") { const e = gen.E4[ev.i!]; setMsg("🏛️ "+e.nm); setCCtx({nm:e.nm,foes:e.tm,d:0.10,ctx:"e4",spr:e.spr}); setPhase("cpre"); }
     else if (ev.y === "C") { setMsg("👑 Maître !"); setCCtx({nm:gen.CHAMP.nm,foes:gen.CHAMP.tm,d:0.15,ctx:"champ",spr:gen.CHAMP.spr}); setPhase("cpre"); }
-    else if (ev.y === "choice") { setMsg(ev.x!); setPhase("choice"); }
-    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS !\nTu es le nouveau Maître ! 🏆"); setPhase("win"); }
-  }, [phase, step, gen, sid]);
+    else if (ev.y === "choice") { setMsg(txt); setPhase("choice"); }
+    else if (ev.y === "W") { setMsg(`🏆 FÉLICITATIONS !\n${playerName} est le nouveau Maître ! 🏆`); setPhase("win"); }
+  }, [phase, step, gen, sid, playerName]);
 
   function reset() { setTeam([]); setBadges([]); setInv({p:1,sp:0,b:0,r:0}); setSid(null); setStep(0); setPhase("proc"); setWCfg(null); setWheelState({ spinning: false, done: false }); setMsg(""); setRSpins(0); setCCtx(null); setWheelKey(0); setSwapData(null); setRetriesLeft(0); setMenuOpen(false); }
   function backToMenu() { setGen(null); reset(); }
@@ -94,7 +98,7 @@ export default function App() {
   function getEffBst(p: Pokemon): number { return Math.round((gen!.BST[p.id] || 300) * (p.bstMod || 1)); }
   function makePoke(pk: Pokemon): Pokemon { return { id:pk.id, n:pk.n, t:pk.t, e:pk.e, bstMod: pk.bstMod || 1 }; }
   function addPoke(pk: Pokemon) { setTeam(prev => [...prev, makePoke(pk)]); }
-  function capturePoke(pk: Pokemon, afterMsg: string, afterFn: () => void) { if (team.length < 6) { addPoke(pk); setMsg(afterMsg); afterFn(); } else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg(pk.n + " veut te rejoindre !\nL'équipe est pleine."); setPhase("swap"); } }
+  function capturePoke(pk: Pokemon, afterMsg: string, afterFn: () => void) { if (team.length < 6) { addPoke(pk); setMsg(afterMsg); afterFn(); } else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg(pk.n + ` veut rejoindre ${playerName} !\nL'équipe est pleine.`); setPhase("swap"); } }
   function boostTeamBst() { setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * 1.03 }))); }
   function nextStep() { setStep(s => s+1); setPhase("proc"); }
   function showWheel(items: WheelItem[], winIdx: number, label: string, colFn: (item:WheelItem,i:number)=>string, onDone: (item:WheelItem)=>void, sizes?: number[]|null) { setWCfg({items, winIdx, label, colFn, onDone, sizes: sizes||null}); setWheelState({ spinning: false, done: false }); setWheelKey(k => k+1); setPhase("wheel"); }
@@ -148,7 +152,7 @@ export default function App() {
       else if (a==="fish") { const pool = sampleArr(gen!.FISH_IDS,8).map(id=>gen!.PM[id]).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎣 Pêche !", ()=>"#3498DB", res2=>capturePoke(res2 as Pokemon, "🎣 "+res2.n+" pêché !", finRoute)); }
       else if (a==="trainer") {
         const rt: FoePokemon[] = []; for (let i=0;i<Math.floor(Math.random()*2)+1;i++) { const rp=gen!.PM[gen!.CATCH_IDS[Math.floor(Math.random()*gen!.CATCH_IDS.length)]]; if(rp)rt.push({n:rp.n,t:rp.t}); }
-        if(!rt.length) rt.push({n:"Pikachu",t:["Électrik"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Un Dresseur te défie !"); setPhase("cpre");
+        if(!rt.length) rt.push({n:"Pikachu",t:["Électrik"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg(`Un Dresseur défie ${playerName} !`); setPhase("cpre");
       }
       else if (a==="shop") {
         const its = badges.length>=8 ? [{label:"Potion",k:"p"},{label:"S. Potion",k:"sp"},{label:"Rappel",k:"r"}] : [{label:"Potion",k:"p"},{label:"S. Potion",k:"sp"},{label:"Pokéball",k:"b"},{label:"Rappel",k:"r"}];
@@ -227,7 +231,6 @@ export default function App() {
   return (
     <div style={{height:"100dvh",backgroundColor:th.bg,fontFamily:th.font,color:th.text,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
       
-      {/* HEADER */}
       <div style={{background:`linear-gradient(180deg, ${th.btnBg} 0%, ${th.border} 100%)`,borderBottom:`4px solid ${th.border}`,padding:"8px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0,zIndex:10,color:"#fff",boxShadow:"0 4px 10px rgba(0,0,0,0.3)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:22}}>⚡</span><div><div style={{fontSize:18,fontWeight:900}}>POKÉMON</div><div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:"#FFF"}}>{gen.name}</div></div></div>
         <button onClick={() => setMenuOpen(!menuOpen)} style={{padding:"4px 8px",fontSize:18,cursor:"pointer",background:"rgba(0,0,0,0.2)",color:"#fff",border:`2px solid ${th.border}`,borderRadius:6,fontWeight:"bold"}}>☰</button>
@@ -235,7 +238,6 @@ export default function App() {
       </div>
       {menuOpen && <div onClick={() => setMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:9}} />}
 
-      {/* PANNEAUX */}
       <div style={{flex:1,display:"flex",flexDirection:mob?"column":"row",overflow:"hidden",padding:mob?4:12,gap:mob?4:12}}>
         <div style={{...getPanelStyle(th), width: mob ? "100%" : 240, flexShrink: 0, padding: mob ? "6px 10px" : "16px", display:"flex", flexDirection: "column", gap: mob ? 6 : 20, zIndex: 5, overflowY: mob?"visible":"auto"}}>
           {mob ? (
@@ -249,13 +251,11 @@ export default function App() {
           <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
             {phase !== "wheel" && phase !== "swap" && phase !== "win" && phase !== "choice" && (
               <div style={{display:"flex",alignItems:"flex-end",gap:mob?20:60,justifyContent:"center"}}>
-                {/* SPRITE DU JOUEUR CORRIGÉ */}
                 <img src={trainerSpr(gen.id==="gen1"?"red":gen.id==="gen2"?"ethan":"lucas")} style={{width:mob?100:140,transform:"scaleX(-1)",imageRendering:"pixelated"}} alt="Héros" onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />
                 {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{width:mob?100:140,imageRendering:"pixelated"}} alt={cCtx.nm} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />}
               </div>
             )}
             
-            {/* ECRAN CHOIX (Gen 2 Kanto) */}
             {phase === "choice" && (
               <div style={{textAlign:"center"}}>
                 <div style={{fontSize:40,marginBottom:20}}>🚢</div>
@@ -296,7 +296,6 @@ export default function App() {
         )}
       </div>
 
-      {/* BOUTONS ACTIONS */}
       <div style={{padding:mob?"8px 8px calc(8px + env(safe-area-inset-bottom))":"16px",background:th.panelBg,borderTop:`4px solid ${th.border}`,display:"flex",flexDirection:"column",gap:10,flexShrink:0,zIndex:10}}>
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",minHeight:42,alignItems:"center"}}>
           
@@ -315,7 +314,6 @@ export default function App() {
           {phase === "win" && <button onClick={reset} style={btnStyle(th, "#F1C40F")}>🔄 Rejouer</button>}
         </div>
 
-        {/* DIALOGUE */}
         <div style={{background:"rgba(255,255,255,0.8)",border:`4px solid ${th.border}`,borderRadius:8,padding:"12px 16px",minHeight:mob?64:80,display:"flex",alignItems:"center",boxShadow:`inset 0 0 0 3px ${th.btnBg}`}}>
           <div style={{fontSize:mob?14:16,whiteSpace:"pre-line",lineHeight:1.5,width:"100%",fontWeight:"bold",color:th.text}}>{msg || "\u00A0"}</div>
         </div>
