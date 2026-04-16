@@ -6,7 +6,7 @@ const SE_GEN2: Record<string, Record<string, number>> = {
   Eau: { Feu: 2, Eau: 0.5, Plante: 0.5, Sol: 2, Roche: 2, Dragon: 0.5 },
   Plante: { Feu: 0.5, Eau: 2, Plante: 0.5, Poison: 0.5, Sol: 2, Vol: 0.5, Insecte: 0.5, Roche: 2, Dragon: 0.5, Acier: 0.5 },
   "Électrik": { Eau: 2, Plante: 0.5, "Électrik": 0.5, Sol: 0, Vol: 2, Dragon: 0.5 },
-  Glace: { Eau: 0.5, Plante: 2, Glace: 0.5, Sol: 2, Vol: 2, Dragon: 2, Acier: 0.5 },
+  Glace: { Feu: 0.5, Eau: 0.5, Plante: 2, Glace: 0.5, Sol: 2, Vol: 2, Dragon: 2, Acier: 0.5 },
   Combat: { Normal: 2, Glace: 2, Poison: 0.5, Vol: 0.5, Psy: 0.5, Insecte: 0.5, Roche: 2, Spectre: 0, "Ténèbres": 2, Acier: 2 },
   Poison: { Plante: 2, Poison: 0.5, Sol: 0.5, Roche: 0.5, Spectre: 0.5, Acier: 0 },
   Sol: { Feu: 2, Plante: 0.5, "Électrik": 2, Poison: 2, Vol: 0, Insecte: 0.5, Roche: 2, Acier: 2 },
@@ -82,7 +82,6 @@ const PD_GEN2: [number, string, string[], number][] = [
   [142,"Ptéra",["Roche","Vol"],0],[143,"Ronflex",["Normal"],0],
   [147,"Minidraco",["Dragon"],148],[148,"Draco",["Dragon"],149],[149,"Dracolosse",["Dragon","Vol"],0],
   
-  // Gen 2
   [152,"Germignon",["Plante"],153],[153,"Macronium",["Plante"],154],[154,"Méganium",["Plante"],0],
   [155,"Héricendre",["Feu"],156],[156,"Feurisson",["Feu"],157],[157,"Typhlosion",["Feu"],0],
   [158,"Kaiminus",["Eau"],159],[159,"Crocrodil",["Eau"],160],[160,"Aligatueur",["Eau"],0],
@@ -152,7 +151,6 @@ const NBST_GEN2: Record<string, number> = {
   "Alakazam":500, "Mackogneur":505, "Mentali":525, "Noctali":525, "Démolosse":500, "Léviator":540, "Ronflex":540, "Florizarre":525, "Dracaufeu":534, "Tortank":530, "Pikachu":320 
 };
 
-// JOHTO + KANTO GYMS
 const GYMS_GEN2: Gym[] = [
   { nm:"Albert",ct:"Mauville",bd:"Zéphyr",tp:"Vol",spr:"falkner",df:-0.10,tm:[{n:"Roucool",t:["Normal","Vol"]},{n:"Roucoups",t:["Normal","Vol"]}] },
   { nm:"Hector",ct:"Écorcia",bd:"Essaim",tp:"Insecte",spr:"bugsy",df:-0.05,tm:[{n:"Coconfort",t:["Insecte","Poison"]},{n:"Insécateur",t:["Insecte","Vol"]}] },
@@ -162,7 +160,6 @@ const GYMS_GEN2: Gym[] = [
   { nm:"Jasmine",ct:"Oliville",bd:"Minéral",tp:"Acier",spr:"jasmine",df:0.08,tm:[{n:"Magnéti",t:["Électrik","Acier"]},{n:"Steelix",t:["Acier","Sol"]}] },
   { nm:"Frédo",ct:"Acajou",bd:"Glacier",tp:"Glace",spr:"pryce",df:0.08,tm:[{n:"Otaria",t:["Eau"]},{n:"Cochignon",t:["Glace","Sol"]}] },
   { nm:"Sandra",ct:"Ébènelle",bd:"Lever",tp:"Dragon",spr:"clair",df:0.10,tm:[{n:"Draco",t:["Dragon"]},{n:"Hyporoi",t:["Eau","Dragon"]}] },
-  // KANTO GYMS (Post-Ligue)
   { nm:"Major Bob",ct:"Carmin",bd:"Foudre",tp:"Électrik",spr:"ltsurge",df:0.12,tm:[{n:"Raichu",t:["Électrik"]},{n:"Électrode",t:["Électrik"]}] },
   { nm:"Morgane",ct:"Safrania",bd:"Marais",tp:"Psy",spr:"sabrina",df:0.12,tm:[{n:"Mentali",t:["Psy"]},{n:"Alakazam",t:["Psy"]}] },
   { nm:"Ondine",ct:"Azuria",bd:"Cascade",tp:"Eau",spr:"misty",df:0.12,tm:[{n:"Lokhlass",t:["Eau","Glace"]},{n:"Staross",t:["Eau","Psy"]}] },
@@ -173,11 +170,12 @@ const GYMS_GEN2: Gym[] = [
   { nm:"Blue",ct:"Jadielle",bd:"Terre",tp:"Divers",spr:"blue",df:0.15,tm:[{n:"Roucarnage",t:["Normal","Vol"]},{n:"Rhinoféros",t:["Sol","Roche"]},{n:"Léviator",t:["Eau","Vol"]}] }
 ];
 
+const RED_BATTLE = { nm:"Légende Red",spr:"red",tm:[{n:"Pikachu",t:["Électrik"]},{n:"Ronflex",t:["Normal"]},{n:"Florizarre",t:["Plante","Poison"]},{n:"Dracaufeu",t:["Feu","Vol"]},{n:"Tortank",t:["Eau"]}] };
+
 const ROCKET_GEN2 = [
   { nm:"Sbire Rocket",spr:"rocketgrunt",tm:[{n:"Nosferapti",t:["Poison","Vol"]},{n:"Rattatac",t:["Normal"]}] },
   { nm:"Commandant Amos",spr:"rocketgrunt",tm:[{n:"Smogogo",t:["Poison"]},{n:"Nostenfer",t:["Poison","Vol"]}] },
-  // Intégration de Red comme dernier "boss" de l'équipe pour que le moteur le détecte à la fin
-  { nm:"Légende Red",spr:"red",tm:[{n:"Pikachu",t:["Électrik"]},{n:"Ronflex",t:["Normal"]},{n:"Florizarre",t:["Plante","Poison"]},{n:"Dracaufeu",t:["Feu","Vol"]},{n:"Tortank",t:["Eau"]}] }
+  RED_BATTLE
 ];
 
 const E4_GEN2 = [
@@ -216,7 +214,7 @@ const STORY_GEN2: StoryEvent[] = [
   {y:"R",p:2,x:"Bourg Palette — Vers Cramois'Île"},{y:"g",i:14},{y:"g",i:15},
   {y:"m",x:"Les 16 Badges sont réunis !\nLe Mont Argenté est accessible."},
   {y:"R",p:3,x:"Mont Argenté — Froid extrême et Pokémon sauvages puissants..."},
-  {y:"S"}, // Lance le dernier élément de ROCKET_GEN2, soit le combat contre Red
+  {y:"S"},
   {y:"W"}
 ];
 
@@ -230,7 +228,7 @@ function getRivTmGen2(sid: number | null, st: number): FoePokemon[] {
   return ts[Math.min(st,3)];
 }
 
-export const gen2Data: GameData = {
+export const gen2Data = {
   id: "gen2", name: "Johto (Génération 2)", themeColor: "#D4AF37",
   SE: SE_GEN2, PD: PD_GEN2, PM: PM_GEN2, BST: BST_GEN2, NBST: NBST_GEN2,
   LEGS: LEGS_GEN2, GYMS: GYMS_GEN2, EVIL_TEAM: ROCKET_GEN2, E4: E4_GEN2, CHAMP: CHAMP_GEN2,
@@ -239,4 +237,4 @@ export const gen2Data: GameData = {
   FISH_IDS: [72,129,170,183,194,211,222,223,226],
   BABY_IDS: [172,173,174,175,236,238,239,240],
   getRivTm: getRivTmGen2
-};
+} as unknown as GameData;
