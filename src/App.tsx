@@ -55,7 +55,7 @@ export default function App() {
 
   function sprUrl(id: number) {
     if (gen?.id === "gen1") return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/${id}.png`;
-    if (gen?.id === "gen2") return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ii/crystal/transparent/${id}.png`;
+    // Retourne les sprites normaux pour toutes les autres générations
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   }
 
@@ -67,10 +67,14 @@ export default function App() {
     if (ev.y === "m") { setMsg(ev.x!); setPhase("msg"); }
     else if (ev.y === "s") {
       setMsg("La mallette s'ouvre...");
-      const starters = [gen.PM[gen.PD[0][0]], gen.PM[gen.PD[3][0]], gen.PM[gen.PD[6][0]]]; 
-      showWheel(starters, Math.floor(Math.random()*3), "🔥 Starter ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n+" choisit Jules !"); setPhase("msg"); });
+      let starters: Pokemon[] = [];
+      if (gen.id === "gen1") starters = [gen.PM[1], gen.PM[4], gen.PM[7]];
+      else if (gen.id === "gen2") starters = [gen.PM[152], gen.PM[155], gen.PM[158]];
+      else if (gen.id === "gen4") starters = [gen.PM[387], gen.PM[390], gen.PM[393]];
+      
+      showWheel(starters, Math.floor(Math.random()*3), "🔥 Starter ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n+" te choisit !"); setPhase("msg"); });
     }
-    else if (ev.y === "r") { const rt = gen.getRivTm(sid, ev.s!); setMsg("⚔️ Rival défie Jules !"); setCCtx({nm:"Rival",foes:rt,d:[-0.10,-0.05,0,0.05][Math.min(ev.s!,3)]||0,ctx:"rival",spr:"blue"}); setPhase("cpre"); }
+    else if (ev.y === "r") { const rt = gen.getRivTm(sid, ev.s!); setMsg("⚔️ Ton rival te défie !"); setCCtx({nm:"Rival",foes:rt,d:[-0.10,-0.05,0,0.05][Math.min(ev.s!,3)]||0,ctx:"rival",spr:"blue"}); setPhase("cpre"); }
     else if (ev.y === "g") { const g = gen.GYMS[ev.i!]; setMsg("🏟️ "+g.nm+" ("+g.ct+")"); setCCtx({nm:g.nm,foes:g.tm,d:g.df,ctx:"gym",gi:ev.i!,spr:g.spr}); setPhase("cpre"); }
     else if (ev.y === "G") { const c = gen.EVIL_TEAM[ev.i!]; setMsg("👾 "+c.nm); setCCtx({nm:c.nm,foes:c.tm,d:0,ctx:"evil",spr:c.spr}); setPhase("cpre"); }
     else if (ev.y === "R") { setMsg(ev.x!); setRSpins(ev.p!); setPhase("route"); }
@@ -78,7 +82,7 @@ export default function App() {
     else if (ev.y === "4") { const e = gen.E4[ev.i!]; setMsg("🏛️ "+e.nm); setCCtx({nm:e.nm,foes:e.tm,d:0.10,ctx:"e4",spr:e.spr}); setPhase("cpre"); }
     else if (ev.y === "C") { setMsg("👑 Maître !"); setCCtx({nm:gen.CHAMP.nm,foes:gen.CHAMP.tm,d:0.15,ctx:"champ",spr:gen.CHAMP.spr}); setPhase("cpre"); }
     else if (ev.y === "choice") { setMsg(ev.x!); setPhase("choice"); }
-    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS !\nJules est le nouveau Maître ! 🏆"); setPhase("win"); }
+    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS !\nTu es le nouveau Maître ! 🏆"); setPhase("win"); }
   }, [phase, step, gen, sid]);
 
   function reset() { setTeam([]); setBadges([]); setInv({p:1,sp:0,b:0,r:0}); setSid(null); setStep(0); setPhase("proc"); setWCfg(null); setWheelState({ spinning: false, done: false }); setMsg(""); setRSpins(0); setCCtx(null); setWheelKey(0); setSwapData(null); setRetriesLeft(0); setMenuOpen(false); }
@@ -87,7 +91,7 @@ export default function App() {
   function getEffBst(p: Pokemon): number { return Math.round((gen!.BST[p.id] || 300) * (p.bstMod || 1)); }
   function makePoke(pk: Pokemon): Pokemon { return { id:pk.id, n:pk.n, t:pk.t, e:pk.e, bstMod: pk.bstMod || 1 }; }
   function addPoke(pk: Pokemon) { setTeam(prev => [...prev, makePoke(pk)]); }
-  function capturePoke(pk: Pokemon, afterMsg: string, afterFn: () => void) { if (team.length < 6) { addPoke(pk); setMsg(afterMsg); afterFn(); } else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg(pk.n + " veut rejoindre Jules !\nL'équipe est pleine."); setPhase("swap"); } }
+  function capturePoke(pk: Pokemon, afterMsg: string, afterFn: () => void) { if (team.length < 6) { addPoke(pk); setMsg(afterMsg); afterFn(); } else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg(pk.n + " veut te rejoindre !\nL'équipe est pleine."); setPhase("swap"); } }
   function boostTeamBst() { setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * 1.03 }))); }
   function nextStep() { setStep(s => s+1); setPhase("proc"); }
   function showWheel(items: WheelItem[], winIdx: number, label: string, colFn: (item:WheelItem,i:number)=>string, onDone: (item:WheelItem)=>void, sizes?: number[]|null) { setWCfg({items, winIdx, label, colFn, onDone, sizes: sizes||null}); setWheelState({ spinning: false, done: false }); setWheelKey(k => k+1); setPhase("wheel"); }
@@ -141,7 +145,7 @@ export default function App() {
       else if (a==="fish") { const pool = sampleArr(gen!.FISH_IDS,8).map(id=>gen!.PM[id]).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎣 Pêche !", ()=>"#3498DB", res2=>capturePoke(res2 as Pokemon, "🎣 "+res2.n+" pêché !", finRoute)); }
       else if (a==="trainer") {
         const rt: FoePokemon[] = []; for (let i=0;i<Math.floor(Math.random()*2)+1;i++) { const rp=gen!.PM[gen!.CATCH_IDS[Math.floor(Math.random()*gen!.CATCH_IDS.length)]]; if(rp)rt.push({n:rp.n,t:rp.t}); }
-        if(!rt.length) rt.push({n:"Pikachu",t:["Électrik"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Un Dresseur défie Jules !"); setPhase("cpre");
+        if(!rt.length) rt.push({n:"Pikachu",t:["Électrik"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Un Dresseur te défie !"); setPhase("cpre");
       }
       else if (a==="shop") {
         const its = badges.length>=8 ? [{label:"Potion",k:"p"},{label:"S. Potion",k:"sp"},{label:"Rappel",k:"r"}] : [{label:"Potion",k:"p"},{label:"S. Potion",k:"sp"},{label:"Pokéball",k:"b"},{label:"Rappel",k:"r"}];
@@ -174,7 +178,7 @@ export default function App() {
     });
   }
 
-  // ÉCRAN D'ACCUEIL : FORME DE CARTOUCHES SANS DÉGRADÉ MULTICOLORE
+  // ÉCRAN D'ACCUEIL : FORME DE CARTOUCHES
   if (!gen) {
     return (
       <div style={{height:"100dvh", background:"#2C3E50", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"'Courier New', monospace", color:"#FFF", padding: 20}}>
@@ -182,7 +186,6 @@ export default function App() {
         
         <div style={{display:"flex", gap: mob ? 30 : 60, flexDirection: mob ? "column" : "row", alignItems: "center"}}>
           
-          {/* Cartouche Gen 1 (Game Boy) */}
           <div onClick={() => setGen(gen1Data)} style={{ cursor: "pointer", width: 160, height: 220, background: "#B0B0B0", borderRadius: "10px 10px 0 0", position: "relative", boxShadow: "2px 4px 10px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column", alignItems: "center", border: "2px solid #888" }}>
             <div style={{ width: "80%", height: 12, borderBottom: "2px solid #808080", marginTop: 10, borderRadius: 20 }} />
             <div style={{ width: "80%", height: 5, borderBottom: "2px solid #808080", marginTop: 2, borderRadius: 20 }} />
@@ -194,7 +197,6 @@ export default function App() {
             <div style={{ width: 0, height: 0, borderLeft: "8px solid transparent", borderRight: "8px solid transparent", borderTop: "12px solid #808080", position: "absolute", bottom: 10 }} />
           </div>
 
-          {/* Cartouche Gen 2 (Game Boy Color) */}
           <div onClick={() => setGen(gen2Data)} style={{ cursor: "pointer", width: 160, height: 230, background: "rgba(212,175,55,0.9)", borderRadius: "10px 10px 0 0", position: "relative", boxShadow: "2px 4px 10px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column", alignItems: "center", border: "2px solid #A67C00", borderTop: "8px solid #A67C00" }}>
             <div style={{ width: "60%", height: 8, borderBottom: "2px solid #A67C00", marginTop: 5, borderRadius: 20 }} />
             <div style={{ marginTop: 20, width: 130, height: 130, background: "#FFF", borderRadius: 4, padding: 8, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", border: "1px solid #888", boxShadow: "inset 0 0 5px rgba(0,0,0,0.1)" }}>
@@ -204,7 +206,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Cartouche Gen 4 (Nintendo DS) */}
           <div onClick={() => setGen(gen4Data)} style={{ cursor: "pointer", width: 140, height: 160, background: "#333", borderRadius: "8px 8px 30px 8px", position: "relative", boxShadow: "2px 4px 10px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column", alignItems: "center", border: "1px solid #222" }}>
              <div style={{ width: 40, height: 4, background: "#222", marginTop: 0 }} />
              <div style={{ marginTop: 15, width: 120, height: 110, background: "#FFF", borderRadius: 4, padding: 8, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", border: "1px solid #111" }}>
@@ -219,7 +220,6 @@ export default function App() {
     );
   }
 
-  // THÈME ACTIF
   const th = THEMES[gen.id] || THEMES.gen4;
 
   return (
