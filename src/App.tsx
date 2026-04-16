@@ -48,7 +48,7 @@ export default function App() {
 
   useEffect(() => {
     if (phase === "wheel" && wheelState.done && wCfg) {
-      const timer = setTimeout(() => { wCfg.onDone(wCfg.items[wCfg.winIdx]); }, 1200);
+      const timer = setTimeout(() => { wCfg.onDone(wCfg.items[wCfg.winIdx]); }, 700);
       return () => clearTimeout(timer);
     }
   }, [phase, wheelState.done, wCfg]);
