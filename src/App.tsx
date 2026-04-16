@@ -306,7 +306,6 @@ function Wheel({ items, winIdx, onDone, label, colFn, sizes, sz = 360 }: WheelPr
     setSpinning(true);
     const arcs = getArcs();
     const seg = arcs[winIdx];
-    // Random position within the segment (with 15% margin from edges)
     const margin = seg.size * 0.15;
     const randomOffset = margin + Math.random() * (seg.size - 2 * margin);
     const targetAngle = seg.start + randomOffset;
@@ -333,7 +332,13 @@ function Wheel({ items, winIdx, onDone, label, colFn, sizes, sz = 360 }: WheelPr
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
       {label && <div style={{fontSize:18,fontWeight:800,color:"#f0e6d3",textAlign:"center"}}>{label}</div>}
-      <canvas ref={ref} width={sz} height={sz} style={{maxWidth:"100%"}} />
+      <canvas 
+        ref={ref} 
+        width={sz} 
+        height={sz} 
+        onClick={spin}
+        style={{maxWidth:"100%", cursor: (!spinning && !done) ? "pointer" : "default"}} 
+      />
       {!spinning && !done && <button onClick={spin} style={btnStyle("#e74c3c","#c0392b")}>🎰 Tourner la roue !</button>}
       {done && (
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
@@ -348,6 +353,24 @@ function Wheel({ items, winIdx, onDone, label, colFn, sizes, sz = 360 }: WheelPr
 function btnStyle(c1: string, c2: string): React.CSSProperties {
   return {padding:"14px 32px",fontSize:16,fontWeight:700,cursor:"pointer",background:`linear-gradient(135deg,${c1},${c2})`,color:"#fff",border:"none",borderRadius:10,boxShadow:"0 4px 16px rgba(0,0,0,.3)",letterSpacing:0.5,minHeight:48,touchAction:"manipulation"};
 }
+
+/* ═══════════════ POKEBOX STYLE (UI Améliorée) ═══════════════ */
+const pokeBoxStyle: React.CSSProperties = {
+  background: "#f8f8f8",
+  border: "4px solid #4a4a4a",
+  borderRadius: 8,
+  boxShadow: "inset 0 0 0 4px #e0e0e0, 0 4px 10px rgba(0,0,0,0.5)",
+  color: "#222",
+  fontFamily: "'Courier New', Courier, monospace",
+  fontWeight: 900,
+  padding: "16px 20px",
+  minHeight: 80,
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  width: "100%",
+  flex: 1
+};
 
 /* ═══════════════ HELPERS ═══════════════ */
 function sampleArr(arr: number[], n: number): number[] {
@@ -400,12 +423,13 @@ export default function App() {
   const [retriesLeft, setRetriesLeft] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [ww, setWw] = useState(typeof window !== 'undefined' ? window.innerWidth : 800);
+  
   useEffect(() => {
     function onResize() { setWw(window.innerWidth); }
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  const mob = ww < 640;
+  const mob = ww < 768;
 
   function reset() {
     setTeam([]); setBadges([]); setInv({p:1,sp:0,b:0,r:0}); setSid(null); setStep(0); setPhase("proc");
@@ -475,7 +499,7 @@ export default function App() {
     const pct = Math.round(chance*100);
     const won = Math.random() < chance;
     const combatItems: WheelItem[] = [{label:"Victoire ! ("+pct+"%)",val:true},{label:"Défaite... ("+(100-pct)+"%)",val:false}];
-    setMsg("⚔️ "+cCtx.nm+" — "+pct+"%\n"+cCtx.foes.map(f=>f.n).join(", "));
+    setMsg("⚔️ "+cCtx.nm+"\n"+cCtx.foes.map(f=>f.n).join(", "));
     showWheel(combatItems, won?0:1, "Combat : "+cCtx.nm, it => it.val?"#2ecc71":"#e74c3c", res => { if (res.val) handleWin(); else handleLoss(); }, [pct, 100-pct]);
   }
 
@@ -606,7 +630,6 @@ export default function App() {
   /* ═══════════════ RENDER ═══════════════ */
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(180deg,#0f0c29,#1a1a2e 50%,#16213e)",fontFamily:"'Trebuchet MS',sans-serif",color:"#f0e6d3",display:"flex",flexDirection:"column"}}>
-
       {/* Header */}
       <div style={{background:"rgba(0,0,0,0.5)",borderBottom:"3px solid #e74c3c",padding:mob?"8px 12px":"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",zIndex:10}}>
         <div style={{display:"flex",alignItems:"center",gap:mob?6:10}}>
@@ -625,76 +648,20 @@ export default function App() {
           )}
         </div>
       </div>
-
-      {/* Click outside to close menu */}
       {menuOpen && <div onClick={() => setMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:9}} />}
 
-      <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0}}>
-        {/* Main — split layout desktop: left=text+sprite, right=wheel+actions */}
-        <div style={{flex:1,padding:mob?12:20,display:"flex",flexDirection:mob?"column":"row",alignItems:mob?"center":"stretch",gap:mob?8:24,overflowY:"auto",justifyContent:"center"}}>
+      {/* ═══ Main Game Area ═══ */}
+      <div style={{flex:1,display:"flex",flexDirection:mob?"column":"row",overflowY:"auto"}}>
+        
+        {/* Left/Center: Wheel Area */}
+        <div style={{flex:1,padding:mob?10:20,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:mob?280:400}}>
+          {phase === "wheel" && wCfg && (
+            <Wheel key={wheelKey} items={wCfg.items} winIdx={wCfg.winIdx} onDone={wCfg.onDone} label={wCfg.label} colFn={wCfg.colFn} sizes={wCfg.sizes} sz={mob?240:320} />
+          )}
 
-          {/* LEFT COLUMN (desktop) / TOP (mobile): message + trainer sprite */}
-          <div style={{display:"flex",flexDirection:"column",gap:mob?8:12,alignItems:"center",width:mob?"100%":320,maxWidth:mob?500:320,flexShrink:0}}>
-
-            {/* Message box — fixed min height */}
-            <div style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.12)",borderRadius:mob?10:14,padding:mob?"12px 14px":"14px 18px",width:"100%",minHeight:mob?60:90,whiteSpace:"pre-line",fontSize:mob?14:15,lineHeight:1.6,textAlign:mob?"center":"left",display:"flex",alignItems:"center",justifyContent:mob?"center":"flex-start"}}>
-              {msg || "\u00A0"}
-            </div>
-
-            {extra && <div style={{fontSize:13,color:"#2ecc71",fontWeight:700,textAlign:"center",padding:"6px 14px",background:"rgba(46,204,113,.1)",borderRadius:10,width:"100%"}}>{extra}</div>}
-
-            {/* Trainer/player sprite slot — fixed height to avoid shifts */}
-            <div style={{width:"100%",minHeight:mob?0:180,display:"flex",alignItems:"center",justifyContent:"center"}}>
-              {(phase==="cpre"||phase==="wheel"||phase==="retry") && cCtx?.spr ? (
-                <div style={{display:"flex",alignItems:"flex-end",gap:mob?10:16,justifyContent:"center"}}>
-                  <img src={trainerSpr("lucas")} alt="Toi" style={{width:mob?60:110,height:mob?60:110,imageRendering:"pixelated",transform:"scaleX(-1)"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                  <img src={trainerSpr(cCtx.spr)} alt={cCtx.nm} style={{width:mob?60:110,height:mob?60:110,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                </div>
-              ) : !mob && (
-                <img src={trainerSpr("lucas")} alt="Toi" style={{width:110,height:110,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN (desktop) / BOTTOM (mobile): wheel + action buttons */}
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:mob?8:14,flex:mob?"none":"0 0 auto",minHeight:mob?0:400}}>
-
-            {phase === "wheel" && wCfg && (
-              <Wheel key={wheelKey} items={wCfg.items} winIdx={wCfg.winIdx} onDone={wCfg.onDone} label={wCfg.label} colFn={wCfg.colFn} sizes={wCfg.sizes} sz={mob?240:320} />
-            )}
-
-            {phase === "msg" && <button onClick={nextStep} style={btnStyle("#3498db","#2980b9")}>▶️ Continuer</button>}
-
-            {phase === "cpre" && cCtx && (
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:mob?13:15,marginBottom:10,lineHeight:1.8,background:"rgba(0,0,0,.25)",borderRadius:10,padding:"10px 16px"}}>
-                  ⚔️ <strong>{cCtx.nm}</strong><br/>
-                  {cCtx.foes.map(f=>f.n).join(", ")}<br/>
-                  <span style={{color:"#f1c40f",fontWeight:800}}>{Math.round(calcWin(team,cCtx.foes,cCtx.d)*100)}% de victoire</span>
-                </div>
-                <button onClick={doCombat} style={btnStyle("#e74c3c","#c0392b")}>⚔️ Combattre !</button>
-              </div>
-            )}
-
-            {phase === "retry" && <button onClick={doCombat} style={btnStyle("#e67e22","#d35400")}>🔄 Retenter !</button>}
-
-            {phase === "go" && (
-              <div style={{textAlign:"center",display:"flex",flexDirection:"column",gap:10,alignItems:"center"}}>
-                <div style={{fontSize:22,fontWeight:900,color:"#e74c3c"}}>💀 GAME OVER</div>
-                <button onClick={() => {
-                  if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); setMsg("Badge "+gym.bd+" obtenu !"); }
-                  else setMsg("Tu continues !");
-                  const evoR = badges.length<=2?0.40:badges.length<=5?0.50:0.60;
-                  const evolvable = team.filter(p=>p.e);
-                  if (evolvable.length>0 && Math.random()<evoR) { const pick=evolvable[Math.floor(Math.random()*evolvable.length)]; const evo=gp(pick.e!); if(evo){setTeam(t=>t.map(p=>p.id===pick.id?{...evo,bstMod:p.bstMod||1}:p));setExtra("🌟 "+pick.n+" évolue en "+evo.n+" !");} }
-                  const isRoute = cCtx?.ctx==="rt"; setCCtx(null);
-                  if(isRoute) finRoute(); else setPhase("msg");
-                }} style={btnStyle("#2ecc71","#27ae60")}>▶️ Continuer quand même</button>
-                {team.length>1 && <button onClick={() => {
-                  const ri=Math.floor(Math.random()*team.length); setExtra(team[ri].n+" perdu..."); setTeam(t=>t.filter((_,i)=>i!==ri)); setPhase("cpre");
-                }} style={btnStyle("#e67e22","#d35400")}>Continuer (-1 Pokémon)</button>}
-              <button onClick={reset} style={btnStyle("#e74c3c","#c0392b")}>Recommencer</button>
-            </div>
+          {/* Fallback Graphic when no wheel */}
+          {phase !== "wheel" && phase !== "swap" && phase !== "win" && (
+            <div style={{opacity:0.1,fontSize:mob?100:150,filter:"grayscale(100%)"}}>⚡</div>
           )}
 
           {phase === "swap" && swapData && (
@@ -720,15 +687,6 @@ export default function App() {
             </div>
           )}
 
-          {phase === "route" && (
-            <div style={{textAlign:"center"}}>
-              <div style={{marginBottom:10,fontSize:15,fontWeight:600}}>🗺️ Tours : {rSpins}</div>
-              <button onClick={doRoute} style={btnStyle("#3498db","#2980b9")}>🎯 Roue de route !</button>
-            </div>
-          )}
-
-          {phase === "sleg" && <button onClick={doLeg} style={btnStyle("#f1c40f","#e67e22")}>🌟 Capturer le légendaire !</button>}
-
           {phase === "win" && (
             <div style={{background:"linear-gradient(135deg,rgba(241,196,15,.12),rgba(231,76,60,.12))",border:"2px solid #f1c40f",borderRadius:14,padding:mob?16:28,textAlign:"center",maxWidth:480,width:"100%"}}>
               <div style={{fontSize:mob?36:48,marginBottom:8}}>🏆</div>
@@ -746,113 +704,141 @@ export default function App() {
               <button onClick={reset} style={btnStyle("#f1c40f","#e67e22")}>🔄 Nouvelle partie</button>
             </div>
           )}
-          </div>{/* end right column */}
         </div>
 
-        {/* ═══ Bottom Panel ═══ */}
-        <div style={{background:"rgba(0,0,0,.5)",borderTop:"3px solid #e74c3c",padding:mob?"8px 6px":"14px 20px",display:"flex",gap:mob?8:20,alignItems:mob?"stretch":"flex-start",flexWrap:"wrap",justifyContent:"center",flexDirection:mob?"column":"row"}}>
-
-          {/* Progress */}
-          {mob ? (
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:18}}>🧢</span>
-              <div style={{flex:1,height:6,background:"rgba(255,255,255,.1)",borderRadius:3,overflow:"hidden"}}>
-                <div style={{height:"100%",width:Math.round(step/STORY.length*100)+"%",background:"linear-gradient(90deg,#e74c3c,#f1c40f)",borderRadius:3,transition:"width .5s"}} />
+        {/* Right Area: Sprites & Team (Desktop only, or adapted for mobile) */}
+        <div style={{width:mob?"100%":340,padding:mob?"0 10px 10px":"20px",display:"flex",flexDirection:"column",gap:15,borderLeft:mob?"none":"2px solid rgba(255,255,255,0.05)",background:mob?"transparent":"rgba(0,0,0,0.2)"}}>
+          
+          {/* Sprites Dresseurs */}
+          <div style={{height:mob?100:150,background:"rgba(255,255,255,0.03)",borderRadius:10,display:"flex",justifyContent:"center",alignItems:"center",border:"1px solid rgba(255,255,255,0.1)"}}>
+            {(phase==="cpre"||phase==="wheel"||phase==="retry") && cCtx?.spr ? (
+              <div style={{display:"flex",alignItems:"flex-end",gap:mob?20:30}}>
+                <img src={trainerSpr("lucas")} alt="Jules" style={{width:mob?70:100,transform:"scaleX(-1)",imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
+                <img src={trainerSpr(cCtx.spr)} alt={cCtx.nm} style={{width:mob?70:100,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
               </div>
-              <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>{step}/{STORY.length}</div>
-            </div>
-          ) : (
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:70}}>
-              <div style={{fontSize:32}}>🧢</div>
-              <div style={{width:70,height:5,background:"rgba(255,255,255,.1)",borderRadius:3,overflow:"hidden"}}>
-                <div style={{height:"100%",width:Math.round(step/STORY.length*100)+"%",background:"linear-gradient(90deg,#e74c3c,#f1c40f)",borderRadius:3,transition:"width .5s"}} />
-              </div>
-              <div style={{fontSize:9,color:"rgba(255,255,255,.4)"}}>{step}/{STORY.length}</div>
-            </div>
-          )}
+            ) : (
+              <img src={trainerSpr("lucas")} alt="Jules" style={{width:mob?70:100,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
+            )}
+          </div>
 
-          {!mob && <div style={{width:2,alignSelf:"stretch",background:"rgba(255,255,255,.08)",borderRadius:1}} />}
-
-          {/* Badges desktop */}
-          {!mob && (
-            <div style={{minWidth:180}}>
-              <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#f1c40f",textAlign:"center"}}>🏅 Badges ({badges.length}/8)</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
-                {GYMS.map((g,i) => {
-                  const has = badges.includes(g.bd);
-                  return <div key={i} title={g.nm} style={{borderRadius:5,padding:"3px 2px",textAlign:"center",fontSize:has?12:7,fontWeight:700,background:has?TC[g.tp]:"rgba(255,255,255,.04)",color:has?"#fff":"rgba(255,255,255,.2)",border:has?"2px solid #f1c40f":"1px solid rgba(255,255,255,.06)"}}>
-                    {has?"⭐":"—"}<div style={{fontSize:7,marginTop:1,opacity:has?1:0.3}}>{g.bd}</div>
-                  </div>;
-                })}
-              </div>
-            </div>
-          )}
-
-          {!mob && <div style={{width:2,alignSelf:"stretch",background:"rgba(255,255,255,.08)",borderRadius:1}} />}
-
-          {/* Team with sprites */}
-          <div style={{flex:1,minWidth:mob?0:200,width:mob?"100%":"auto"}}>
-            <div style={{fontSize:mob?10:12,fontWeight:800,marginBottom:mob?3:5,color:"#3498db",textAlign:"center"}}>👥 Équipe ({team.length}/6)</div>
-            <div style={{display:"grid",gridTemplateColumns:mob?"repeat(3,1fr)":"repeat(6,1fr)",gap:mob?4:6}}>
+          {/* Équipe en 2 colonnes */}
+          <div style={{background:"rgba(0,0,0,0.4)",borderRadius:10,padding:12}}>
+            <div style={{fontSize:14,fontWeight:800,marginBottom:10,color:"#3498db",textAlign:"center"}}>👥 Équipe ({team.length}/6)</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
               {[0,1,2,3,4,5].map(i => {
                 const p = team[i];
-                if (!p) return <div key={"e"+i} style={{height:mob?90:110,borderRadius:6,background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"rgba(255,255,255,.12)"}}>vide</div>;
+                if (!p) return <div key={"e"+i} style={{height:70,borderRadius:6,background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"rgba(255,255,255,.12)"}}>vide</div>;
                 return (
-                  <div key={p.id+"-"+i} style={{background:"rgba(255,255,255,.07)",borderRadius:6,padding:mob?"3px":"4px",borderBottom:"3px solid "+(TC[p.t[0]]||"#888"),textAlign:"center"}}>
-                    <img src={sprUrl(p.id)} alt="" style={{width:mob?48:56,height:mob?48:56,imageRendering:"pixelated",display:"block",margin:"0 auto"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                    <div style={{fontSize:mob?10:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.n}</div>
-                    <div style={{display:"flex",gap:2,justifyContent:"center",marginTop:2,flexWrap:"wrap"}}>
-                      {p.t.map(tp => <span key={tp} style={{fontSize:mob?6:7,padding:"1px 4px",borderRadius:3,background:TC[tp],color:"#fff",fontWeight:600}}>{tp}</span>)}
+                  <div key={p.id+"-"+i} style={{background:"rgba(255,255,255,.07)",borderRadius:6,padding:"6px",borderBottom:"3px solid "+(TC[p.t[0]]||"#888"),display:"flex",alignItems:"center",gap:6}}>
+                    <img src={sprUrl(p.id)} alt="" style={{width:40,height:40,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
+                    <div style={{overflow:"hidden"}}>
+                      <div style={{fontSize:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.n}</div>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,.4)",marginTop:2}}>BST {getEffBst(p)}</div>
                     </div>
-                    <div style={{fontSize:mob?8:9,color:"rgba(255,255,255,.4)",marginTop:2}}>BST {getEffBst(p)}</div>
                   </div>
                 );
               })}
             </div>
           </div>
-
-          {/* Badges + Inv row mobile (after team) */}
-          {mob && (
-            <div style={{display:"flex",gap:8}}>
-              <div style={{flex:1}}>
-                <div style={{fontSize:10,fontWeight:800,marginBottom:3,color:"#f1c40f"}}>🏅 {badges.length}/8</div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:2}}>
-                  {GYMS.map((g,i) => {
-                    const has = badges.includes(g.bd);
-                    return <div key={i} style={{borderRadius:4,padding:"2px 1px",textAlign:"center",fontSize:has?10:6,fontWeight:700,background:has?TC[g.tp]:"rgba(255,255,255,.04)",color:has?"#fff":"rgba(255,255,255,.2)",border:has?"1px solid #f1c40f":"1px solid rgba(255,255,255,.06)"}}>
-                      {has?"⭐":"—"}<div style={{fontSize:5,opacity:has?1:0.3}}>{g.bd}</div>
-                    </div>;
-                  })}
-                </div>
-              </div>
-              <div>
-                <div style={{fontSize:10,fontWeight:800,marginBottom:3,color:"#2ecc71"}}>🎒</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2}}>
-                  {([["🧪",inv.p],["💊",inv.sp],["⭕",inv.b],["💫",inv.r]] as [string,number][]).map(([icon,val],i) =>
-                    <div key={i} style={{background:"rgba(255,255,255,.06)",borderRadius:4,padding:"2px 5px",display:"flex",alignItems:"center",gap:2}}>
-                      <span style={{fontSize:10}}>{icon}</span><span style={{fontSize:12,fontWeight:800}}>{val}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          {!mob && <div style={{width:2,alignSelf:"stretch",background:"rgba(255,255,255,.08)",borderRadius:1}} />}
-          {!mob && (
-            <div style={{minWidth:130}}>
-              <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#2ecc71",textAlign:"center"}}>🎒 Inventaire</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                {[{icon:"🧪",val:inv.p,label:"Potions"},{icon:"💊",val:inv.sp,label:"Super P."},{icon:"⭕",val:inv.b,label:"Pokéballs"},{icon:"💫",val:inv.r,label:"Rappels"}].map(item =>
-                  <div key={item.label} style={{background:"rgba(255,255,255,.06)",borderRadius:7,padding:"6px 8px",textAlign:"center"}}>
-                    <div style={{fontSize:18}}>{item.icon}</div>
-                    <div style={{fontSize:16,fontWeight:800}}>{item.val}</div>
-                    <div style={{fontSize:8,color:"rgba(255,255,255,.5)"}}>{item.label}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
+      </div>
+
+      {/* ═══ Bottom Panel (Dialog, Actions, Progress) ═══ */}
+      <div style={{background:"#2a2a2a",borderTop:"4px solid #e74c3c",padding:mob?"12px":"20px",display:"flex",flexDirection:mob?"column":"row",gap:20,alignItems:"stretch"}}>
+        
+        {/* Status Area (Left on Desktop) */}
+        <div style={{display:"flex",flexDirection:mob?"row":"column",gap:mob?10:20,width:mob?"100%":220,flexShrink:0,justifyContent:mob?"space-around":"flex-start"}}>
+          {/* Progress */}
+          <div style={{display:"flex",flexDirection:mob?"row":"column",alignItems:"center",gap:mob?8:4,flex:mob?1:"none"}}>
+            <div style={{fontSize:mob?20:32}}>🧢</div>
+            <div style={{width:mob?"100%":100,height:6,background:"rgba(255,255,255,.1)",borderRadius:3,overflow:"hidden"}}>
+              <div style={{height:"100%",width:Math.round(step/STORY.length*100)+"%",background:"linear-gradient(90deg,#e74c3c,#f1c40f)",borderRadius:3,transition:"width .5s"}} />
+            </div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>{step}/{STORY.length}</div>
+          </div>
+
+          {/* Badges */}
+          <div style={{flex:mob?1:"none"}}>
+            <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#f1c40f",textAlign:"center"}}>🏅 Badges ({badges.length}/8)</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:2}}>
+              {GYMS.map((g,i) => {
+                const has = badges.includes(g.bd);
+                return <div key={i} title={g.nm} style={{borderRadius:4,padding:"3px 1px",textAlign:"center",fontSize:has?10:7,fontWeight:700,background:has?TC[g.tp]:"rgba(255,255,255,.04)",color:has?"#fff":"rgba(255,255,255,.2)",border:has?"1px solid #f1c40f":"1px solid rgba(255,255,255,.06)"}}>
+                  {has?"⭐":"—"}
+                </div>;
+              })}
+            </div>
+          </div>
+
+          {/* Inventory */}
+          <div style={{flex:mob?1:"none"}}>
+            <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#2ecc71",textAlign:"center"}}>🎒 Inventaire</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+              {[{icon:"🧪",val:inv.p},{icon:"💊",val:inv.sp},{icon:"⭕",val:inv.b},{icon:"💫",val:inv.r}].map((item,i) =>
+                <div key={i} style={{background:"rgba(255,255,255,.06)",borderRadius:5,padding:"4px",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                  <span style={{fontSize:12}}>{item.icon}</span><span style={{fontSize:12,fontWeight:800}}>{item.val}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Narrative & Action Area (Right on Desktop) */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",gap:12}}>
+          {/* PokéBox de Dialogue */}
+          <div style={pokeBoxStyle}>
+            <div style={{fontSize:mob?14:16,lineHeight:1.6,whiteSpace:"pre-line"}}>
+              {msg || "\u00A0"}
+            </div>
+            {extra && <div style={{marginTop:8,color:"#27ae60",fontSize:13}}>{extra}</div>}
+          </div>
+
+          {/* Action Buttons Zone */}
+          <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"flex-end",minHeight:48,alignItems:"center"}}>
+            {phase === "msg" && <button onClick={nextStep} style={btnStyle("#3498db","#2980b9")}>▶️ Continuer</button>}
+            
+            {phase === "cpre" && cCtx && (
+              <>
+                <div style={{marginRight:"auto",fontSize:14,background:"rgba(0,0,0,.4)",padding:"8px 12px",borderRadius:8}}>
+                  Victoire estimée : <strong style={{color:"#f1c40f"}}>{Math.round(calcWin(team,cCtx.foes,cCtx.d)*100)}%</strong>
+                </div>
+                <button onClick={doCombat} style={btnStyle("#e74c3c","#c0392b")}>⚔️ Combattre !</button>
+              </>
+            )}
+            
+            {phase === "retry" && <button onClick={doCombat} style={btnStyle("#e67e22","#d35400")}>🔄 Retenter !</button>}
+            
+            {phase === "go" && (
+              <>
+                <button onClick={() => {
+                  if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); setMsg("Badge "+gym.bd+" obtenu !"); }
+                  else setMsg("Tu continues !");
+                  const evoR = badges.length<=2?0.40:badges.length<=5?0.50:0.60;
+                  const evolvable = team.filter(p=>p.e);
+                  if (evolvable.length>0 && Math.random()<evoR) { const pick=evolvable[Math.floor(Math.random()*evolvable.length)]; const evo=gp(pick.e!); if(evo){setTeam(t=>t.map(p=>p.id===pick.id?{...evo,bstMod:p.bstMod||1}:p));setExtra("🌟 "+pick.n+" évolue en "+evo.n+" !");} }
+                  const isRoute = cCtx?.ctx==="rt"; setCCtx(null);
+                  if(isRoute) finRoute(); else setPhase("msg");
+                }} style={btnStyle("#2ecc71","#27ae60")}>▶️ Continuer quand même</button>
+                {team.length>1 && <button onClick={() => {
+                  const ri=Math.floor(Math.random()*team.length); setExtra(team[ri].n+" perdu..."); setTeam(t=>t.filter((_,i)=>i!==ri)); setPhase("cpre");
+                }} style={btnStyle("#e67e22","#d35400")}>Continuer (-1 Pokémon)</button>}
+                <button onClick={reset} style={btnStyle("#e74c3c","#c0392b")}>Recommencer</button>
+              </>
+            )}
+            
+            {phase === "route" && (
+              <>
+                <div style={{marginRight:"auto",fontSize:14,background:"rgba(0,0,0,.4)",padding:"8px 12px",borderRadius:8}}>
+                  Tours restants : <strong>{rSpins}</strong>
+                </div>
+                <button onClick={doRoute} style={btnStyle("#3498db","#2980b9")}>🎯 Roue de route !</button>
+              </>
+            )}
+            
+            {phase === "sleg" && <button onClick={doLeg} style={btnStyle("#f1c40f","#e67e22")}>🌟 Capturer le légendaire !</button>}
+          </div>
+        </div>
+
       </div>
     </div>
   );
