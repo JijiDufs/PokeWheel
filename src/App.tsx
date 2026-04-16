@@ -19,7 +19,6 @@ const ROPTS = [ {label:"Capture",w:30,a:"catch"},{label:"Pêche",w:12,a:"fish"},
 const SPECIAL_EVENTS = [ {label:"Fossile",a:"fo"},{label:"Œuf",a:"eg"},{label:"Légende",a:"lg"}, {label:"Objet",a:"it"},{label:"Échange",a:"tr"},{label:"D. Élite",a:"sc"} ];
 
 export default function App() {
-  // TOUS LES HOOKS DOIVENT RESTER EN HAUT DE LA FONCTION
   const [gen, setGen] = useState<GameData | null>(null);
   const [team, setTeam] = useState<Pokemon[]>([]);
   const [badges, setBadges] = useState<string[]>([]);
@@ -45,9 +44,19 @@ export default function App() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Le useEffect est maintenant bien placé AVANT le "if (!gen)" et se coupe proprement si la génération n'est pas encore choisie.
+  // --- NOUVEAUTÉ : Validation automatique de la roue ---
   useEffect(() => {
-    if (!gen) return; // Sécurité anti-crash
+    if (phase === "wheel" && wheelState.done && wCfg) {
+      const timer = setTimeout(() => {
+        wCfg.onDone(wCfg.items[wCfg.winIdx]);
+      }, 1200); // 1.2 seconde de pause pour lire le résultat
+      return () => clearTimeout(timer);
+    }
+  }, [phase, wheelState.done, wCfg]);
+  // ----------------------------------------------------
+
+  useEffect(() => {
+    if (!gen) return;
     if (phase !== "proc") return;
     const ev = gen.STORY[step]; if (!ev) return;
     if (ev.y === "m") { setMsg(ev.x!); setPhase("msg"); }
@@ -161,11 +170,10 @@ export default function App() {
     });
   }
 
-  // ÉCRAN DE SÉLECTION DÉPLACÉ APRÈS LES HOOKS
   if (!gen) {
     return (
       <div style={{height:"100dvh", background:"#2C3E50", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"'Courier New', monospace", color:"#FFF"}}>
-        <h1 style={{textShadow:"2px 2px 0 #000", marginBottom: 40, textAlign:"center"}}>POKÉMON RANDOMIZER<br/><span style={{fontSize: 16, color:"#F1C40F"}}>Choisis ta génération</span></h1>
+        <h1 style={{textShadow:"2px 2px 0 #000", marginBottom: 40, textAlign:"center"}}>POKÉMON RANDOMIZER<br/><span style={{fontSize: 16, color:"#F1C40F"}}>Générations</span></h1>
         <div style={{display:"flex", gap: 20, flexWrap: "wrap", justifyContent: "center"}}>
           <button onClick={() => setGen(gen1Data)} style={{padding: "20px 40px", fontSize: 20, fontWeight: "bold", cursor: "pointer", background: "#3498DB", color: "#FFF", border: "4px solid #F0ECD6", borderRadius: 12, boxShadow: "0 6px 0 #1A252F"}}>
             Kanto (Génération 1)
@@ -233,7 +241,14 @@ export default function App() {
 
       <div style={{padding:mob?"8px 8px calc(8px + env(safe-area-inset-bottom))":"16px",background:"#FFF",borderTop:"4px solid #2C3E50",display:"flex",flexDirection:"column",gap:10,flexShrink:0,zIndex:10}}>
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",minHeight:42,alignItems:"center"}}>
-          {phase === "wheel" && (<button onClick={() => { if (!wheelState.spinning && !wheelState.done) wheelRef.current?.spin(); else if (wheelState.done && wCfg) { setMsg(msg); wCfg.onDone(wCfg.items[wCfg.winIdx]); } }} disabled={wheelState.spinning} style={{...btnStyle(wheelState.done ? "#3498DB" : "#E3350D", wheelState.done ? "#21618C" : "#9E1B0A"), opacity: wheelState.spinning ? 0.6 : 1}}>{wheelState.spinning ? "🎰 Rotation..." : wheelState.done ? "▶️ Continuer" : "🎰 Tourner la roue"}</button>)}
+          
+          {/* BOUTON MODIFIÉ ICI : Il disparaît quand la roue a fini de tourner */}
+          {phase === "wheel" && !wheelState.done && (
+            <button onClick={() => { if (!wheelState.spinning) wheelRef.current?.spin(); }} disabled={wheelState.spinning} style={{...btnStyle("#E3350D", "#9E1B0A"), opacity: wheelState.spinning ? 0.6 : 1}}>
+              {wheelState.spinning ? "🎰 Rotation..." : "🎰 Tourner la roue"}
+            </button>
+          )}
+
           {phase === "msg" && <button onClick={nextStep} style={btnStyle("#3498DB","#21618C")}>▶️ Continuer</button>}
           {phase === "cpre" && cCtx && (<button onClick={doCombat} style={btnStyle("#E3350D","#9E1B0A")}>⚔️ Combattre</button>)}
           {phase === "retry" && <button onClick={doCombat} style={btnStyle("#F39C12","#B9770E")}>🔄 Retenter</button>}
