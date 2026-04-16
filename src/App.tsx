@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { GameData, Pokemon, FoePokemon, InvState, CombatCtx, SwapData, WheelItem, Theme } from "./types";
 import { Wheel, WheelRef } from "./components/Wheel";
 import { gen1Data } from "./data/gen1";
@@ -78,7 +78,7 @@ export default function App() {
       else if (gen.id === "gen2") starters = [gen.PM[152], gen.PM[155], gen.PM[158]];
       else starters = [gen.PM[387], gen.PM[390], gen.PM[393]];
       
-      showWheel(starters, Math.floor(Math.random() * 3), "🔥 Starter ?", it => TC[it.t![0]], res => { 
+      showWheel(starters, Math.floor(Math.random() * 3), "🔥 Starter ?", (it: WheelItem) => TC[it.t![0]], (res: WheelItem) => { 
         setSid(res.id!); 
         addPoke(res as Pokemon); 
         setMsg(res.n + ` choisit ${playerName} !`); 
@@ -176,7 +176,7 @@ export default function App() {
     }
     const pct = Math.round(chance * 100);
     setMsg("⚔️ Combat contre " + cCtx.nm + " !\n" + cCtx.foes.map(f => f.n).join(", "));
-    showWheel([{ label: "Victoire", val: true }, { label: "Défaite", val: false }], Math.random() < chance ? 0 : 1, "Combat", it => it.val ? "#2ecc71" : "#e74c3c", res => { if (res.val) handleWin(); else handleLoss(); }, [pct, 100 - pct]);
+    showWheel([{ label: "Victoire", val: true }, { label: "Défaite", val: false }], Math.random() < chance ? 0 : 1, "Combat", (it: WheelItem) => it.val ? "#2ecc71" : "#e74c3c", (res: WheelItem) => { if (res.val) handleWin(); else handleLoss(); }, [pct, 100 - pct]);
   }
 
   function handleWin() {
@@ -206,9 +206,9 @@ export default function App() {
     const evoR = badges.length <= 2 ? 0.40 : badges.length <= 5 ? 0.50 : 0.60; 
     const pct = Math.round(evoR * 100);
     
-    showWheel([{ label: "Évolution", val: true }, { label: "Rien", val: false }], Math.random() < evoR ? 0 : 1, "🧬 Évolution ?", it => it.val ? "#E67E22" : "#7F8C8D", res => {
+    showWheel([{ label: "Évolution", val: true }, { label: "Rien", val: false }], Math.random() < evoR ? 0 : 1, "🧬 Évolution ?", (it: WheelItem) => it.val ? "#E67E22" : "#7F8C8D", (res: WheelItem) => {
       if (!res.val) { setMsg(wMsg); if (isRt) finRoute(); else setPhase("msg"); return; }
-      showWheel(evos.map(p => ({ label: p.n, id: p.id, e: p.e, n: p.n, t: p.t, bstMod: p.bstMod })), Math.floor(Math.random() * evos.length), "Qui évolue ?", it => TC[it.t![0]] || "#888", res2 => {
+      showWheel(evos.map(p => ({ label: p.n, id: p.id, e: p.e, n: p.n, t: p.t, bstMod: p.bstMod })), Math.floor(Math.random() * evos.length), "Qui évolue ?", (it: WheelItem) => TC[it.t![0]] || "#888", (res2: WheelItem) => {
         const evo = gen!.PM[res2.e as number]; 
         if (evo) { 
           setTeam(t => t.map(p => p.id === res2.id ? { ...evo, bstMod: p.bstMod || 1 } : p)); 
@@ -237,21 +237,27 @@ export default function App() {
 
   function doRoute() {
     const opts = badges.length >= 8 ? [{ label: "Dresseur", w: 25, a: "trainer" }, { label: "Boutique", w: 25, a: "shop" }, { label: "Événement", w: 20, a: "special" }, { label: "Avancer", w: 30, a: "nothing" }] : ROPTS;
-    showWheel(opts, weightedIdx(opts), badges.length >= 8 ? "🏛️ Victoire" : "🎯 Action ?", it => ({ catch: "#E74C3C", fish: "#3498DB", trainer: "#E67E22", shop: "#2ECC71", special: "#9B59B6", nothing: "#7F8C8D", mystery: "#F1C40F" } as Record<string, string>)[it.a || ""] || "#888", res => {
+    showWheel(opts, weightedIdx(opts), badges.length >= 8 ? "🏛️ Victoire" : "🎯 Action ?", (it: WheelItem) => ({ catch: "#E74C3C", fish: "#3498DB", trainer: "#E67E22", shop: "#2ECC71", special: "#9B59B6", nothing: "#7F8C8D", mystery: "#F1C40F" } as Record<string, string>)[it.a || ""] || "#888", (res: WheelItem) => {
       const a = res.a;
-      if (a === "catch") { const pool = sampleArr(gen!.CATCH_IDS, 10).map(id => gen!.PM[id]).filter(Boolean); showWheel(pool, Math.floor(Math.random() * pool.length), "🎯 Capture !", it => TC[it.t![0]] || "#888", res2 => capturePoke(res2 as Pokemon, "✨ " + res2.n + " capturé !", finRoute)); }
-      else if (a === "fish") { const pool = sampleArr(gen!.FISH_IDS, 8).map(id => gen!.PM[id]).filter(Boolean); showWheel(pool, Math.floor(Math.random() * pool.length), "🎣 Pêche !", () => "#3498DB", res2 => capturePoke(res2 as Pokemon, "🎣 " + res2.n + " pêché !", finRoute)); }
+      if (a === "catch") { 
+        const pool = sampleArr(gen!.CATCH_IDS, 10).map(id => gen!.PM[id]).filter(Boolean) as WheelItem[]; 
+        showWheel(pool, Math.floor(Math.random() * pool.length), "🎯 Capture !", (it: WheelItem) => TC[it.t![0]] || "#888", (res2: WheelItem) => capturePoke(res2 as Pokemon, "✨ " + res2.n + " capturé !", finRoute)); 
+      }
+      else if (a === "fish") { 
+        const pool = sampleArr(gen!.FISH_IDS, 8).map(id => gen!.PM[id]).filter(Boolean) as WheelItem[]; 
+        showWheel(pool, Math.floor(Math.random() * pool.length), "🎣 Pêche !", () => "#3498DB", (res2: WheelItem) => capturePoke(res2 as Pokemon, "🎣 " + res2.n + " pêché !", finRoute)); 
+      }
       else if (a === "trainer") {
         const rt: FoePokemon[] = []; for (let i = 0; i < Math.floor(Math.random() * 2) + 1; i++) { const rp = gen!.PM[gen!.CATCH_IDS[Math.floor(Math.random() * gen!.CATCH_IDS.length)]]; if (rp) rt.push({ n: rp.n, t: rp.t }); }
         if (!rt.length) rt.push({ n: "Pikachu", t: ["Électrik"] }); setCCtx({ nm: "Dresseur", foes: rt, d: -0.05, ctx: "rt", spr: "acetrainer-gen4" }); setMsg(`Un Dresseur défie ${playerName} !`); setPhase("cpre");
       }
       else if (a === "shop") {
         const its = badges.length >= 8 ? [{ label: "Potion", k: "p" }, { label: "S. Potion", k: "sp" }, { label: "Rappel", k: "r" }] : [{ label: "Potion", k: "p" }, { label: "S. Potion", k: "sp" }, { label: "Pokéball", k: "b" }, { label: "Rappel", k: "r" }];
-        showWheel(its, Math.floor(Math.random() * its.length), "🛒 Boutique !", (_, i) => ["#E74C3C", "#E67E22", "#3498DB", "#F1C40F"][i], res2 => { setInv(v => { const nv = { ...v }; nv[res2.k as keyof InvState]++; return nv; }); setMsg("🎁 " + res2.label + " !"); finRoute(); });
+        showWheel(its, Math.floor(Math.random() * its.length), "🛒 Boutique !", (_: WheelItem, i: number) => ["#E74C3C", "#E67E22", "#3498DB", "#F1C40F"][i], (res2: WheelItem) => { setInv(v => { const nv = { ...v }; nv[res2.k as keyof InvState]++; return nv; }); setMsg("🎁 " + res2.label + " !"); finRoute(); });
       }
       else if (a === "special") {
         const evts = badges.length >= 8 ? [{ label: "Objet", a: "it" }, { label: "D. Élite", a: "sc" }, { label: "Œuf", a: "eg" }] : SPECIAL_EVENTS;
-        showWheel(evts, Math.floor(Math.random() * evts.length), "⭐ Événement !", (_, i) => ["#F1C40F", "#E91E63", "#9B59B6", "#00BCD4", "#FF5722", "#4CAF50"][i], res2 => {
+        showWheel(evts, Math.floor(Math.random() * evts.length), "⭐ Événement !", (_: WheelItem, i: number) => ["#F1C40F", "#E91E63", "#9B59B6", "#00BCD4", "#FF5722", "#4CAF50"][i], (res2: WheelItem) => {
           const sa = res2.a;
           if (sa === "fo") { setMsg("Rien trouvé..."); finRoute(); }
           else if (sa === "eg") { const b = sampleArr(gen!.BABY_IDS, 1)[0]; if (b) capturePoke(gen!.PM[b], "🥚 Œuf éclos !", finRoute); else { setMsg("Œuf vide..."); finRoute(); } }
@@ -275,11 +281,11 @@ export default function App() {
   }
 
   function doLeg() {
-    const legs = gen!.LEGS.map(l => gen!.PM[l[0]]).filter(Boolean);
+    const legs = gen!.LEGS.map(l => gen!.PM[l[0]]).filter(Boolean) as WheelItem[];
     if (!legs.length) { setPhase("msg"); return; }
-    showWheel(legs, Math.floor(Math.random() * legs.length), "🌟 Légendaire ?", it => "#5DADE2", res => {
+    showWheel(legs, Math.floor(Math.random() * legs.length), "🌟 Légendaire ?", (it: WheelItem) => "#5DADE2", (res: WheelItem) => {
       setMsg(res.n + " apparaît ! (40% capture)");
-      showWheel([{ label: "Capturé !", val: true }, { label: "Enfui...", val: false }], Math.random() < 0.4 ? 0 : 1, "Capture", it => it.val ? "#F1C40F" : "#E74C3C", c => {
+      showWheel([{ label: "Capturé !", val: true }, { label: "Enfui...", val: false }], Math.random() < 0.4 ? 0 : 1, "Capture", (it: WheelItem) => it.val ? "#F1C40F" : "#E74C3C", (c: WheelItem) => {
         if (c.val) capturePoke(res as Pokemon, "🌟 " + res.n + " capturé !", () => setPhase("msg")); else { setMsg("Il s'enfuit..."); setPhase("msg"); }
       }, [40, 60]);
     });
