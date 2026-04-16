@@ -38,7 +38,7 @@ const PD_GEN2: [number, string, string[], number][] = [
   [37,"Goupix",["Feu"],38],[38,"Feunard",["Feu"],0],
   [39,"Rondoudou",["Normal"],40],[40,"Grodoudou",["Normal"],0],
   [41,"Nosferapti",["Poison","Vol"],42],[42,"Nosferalto",["Poison","Vol"],169],
-  [43,"Mystherbe",["Plante","Poison"],44],[44,"Ortide",["Plante","Poison"],45],[45,"Rafflesia",["Plante","Poison"],0],
+  [43,"Mystherbe",["Plante","Poison"],44],[44,"Ortide",["Plante","Poison"],45],[45,"Rafflesia",["Plante","Poison"],182],
   [46,"Paras",["Insecte","Plante"],47],[47,"Parasect",["Insecte","Plante"],0],
   [48,"Mimitoss",["Insecte","Poison"],49],[49,"Aéromite",["Insecte","Poison"],0],
   [50,"Taupiqueur",["Sol"],51],[51,"Triopikeur",["Sol"],0],
@@ -46,14 +46,14 @@ const PD_GEN2: [number, string, string[], number][] = [
   [54,"Psykokwak",["Eau"],55],[55,"Akwakwak",["Eau"],0],
   [56,"Férosinge",["Combat"],57],[57,"Colossinge",["Combat"],0],
   [58,"Caninos",["Feu"],59],[59,"Arcanin",["Feu"],0],
-  [60,"Ptitard",["Eau"],61],[61,"Têtarte",["Eau"],62],[62,"Tartard",["Eau","Combat"],0],
+  [60,"Ptitard",["Eau"],61],[61,"Têtarte",["Eau"],62],[62,"Tartard",["Eau","Combat"],186],
   [63,"Abra",["Psy"],64],[64,"Kadabra",["Psy"],65],[65,"Alakazam",["Psy"],0],
   [66,"Machoc",["Combat"],67],[67,"Machopeur",["Combat"],68],[68,"Mackogneur",["Combat"],0],
   [69,"Chétiflor",["Plante","Poison"],70],[70,"Boustiflor",["Plante","Poison"],71],[71,"Empiflor",["Plante","Poison"],0],
   [72,"Tentacool",["Eau","Poison"],73],[73,"Tentacruel",["Eau","Poison"],0],
   [74,"Racaillou",["Roche","Sol"],75],[75,"Gravalanch",["Roche","Sol"],76],[76,"Grolem",["Roche","Sol"],0],
   [77,"Ponyta",["Feu"],78],[78,"Galopa",["Feu"],0],
-  [79,"Ramoloss",["Eau","Psy"],80],[80,"Flagadoss",["Eau","Psy"],0],
+  [79,"Ramoloss",["Eau","Psy"],80],[80,"Flagadoss",["Eau","Psy"],199],
   [81,"Magnéti",["Électrik","Acier"],82],[82,"Magnéton",["Électrik","Acier"],0],
   [83,"Canarticho",["Normal","Vol"],0],[84,"Doduo",["Normal","Vol"],85],[85,"Dodrio",["Normal","Vol"],0],
   [86,"Otaria",["Eau"],87],[87,"Dewgong",["Eau","Glace"],0],
@@ -76,7 +76,7 @@ const PD_GEN2: [number, string, string[], number][] = [
   [125,"Élektek",["Électrik"],0],[126,"Magmar",["Feu"],0],[127,"Scarabrute",["Insecte"],0],
   [128,"Tauros",["Normal"],0],[129,"Magicarpe",["Eau"],130],[130,"Léviator",["Eau","Vol"],0],
   [131,"Lokhlass",["Eau","Glace"],0],[132,"Métamorph",["Normal"],0],
-  [133,"Évoli",["Normal"],0],[134,"Aquali",["Eau"],0],[135,"Voltali",["Électrik"],0],[136,"Pyroli",["Feu"],0],
+  [133,"Évoli",["Normal"],134],[134,"Aquali",["Eau"],0],[135,"Voltali",["Électrik"],0],[136,"Pyroli",["Feu"],0],
   [137,"Porygon",["Normal"],233],[138,"Amonita",["Roche","Eau"],139],[139,"Amonistar",["Roche","Eau"],0],
   [140,"Kabuto",["Roche","Eau"],141],[141,"Kabutops",["Roche","Eau"],0],
   [142,"Ptéra",["Roche","Vol"],0],[143,"Ronflex",["Normal"],0],
@@ -95,7 +95,7 @@ const PD_GEN2: [number, string, string[], number][] = [
   [175,"Togepi",["Normal"],176],[176,"Togetic",["Normal","Vol"],0],
   [177,"Natu",["Normal","Vol"],178],[178,"Xatu",["Normal","Vol"],0],
   [179,"Wattouat",["Électrik"],180],[180,"Lainergie",["Électrik"],181],[181,"Pharamp",["Électrik"],0],
-  [182,"Joliflor",["Plante","Poison"],0],[183,"Marill",["Eau","Fée"],184],[184,"Azumarill",["Eau","Fée"],0],
+  [182,"Joliflor",["Plante","Poison"],0],[183,"Marill",["Eau"],184],[184,"Azumarill",["Eau"],0],
   [185,"Simularbre",["Roche"],0],[186,"Tarpaud",["Eau"],0],
   [187,"Granivol",["Plante","Vol"],188],[188,"Floravol",["Plante","Vol"],189],[189,"Cotovol",["Plante","Vol"],0],
   [190,"Capumain",["Normal"],0],[191,"Tournegrin",["Plante"],0],
@@ -128,8 +128,8 @@ PD_GEN2.forEach(a => { PM_GEN2[a[0]] = { id: a[0], n: a[1], t: a[2], e: a[3] || 
 const LEGS_GEN2: [number, string, string[]][] = [
   [144,"Artikodin",["Glace","Vol"]],[145,"Électhor",["Électrik","Vol"]],[146,"Sulfura",["Feu","Vol"]],
   [150,"Mewtwo",["Psy"]],[151,"Mew",["Psy"]],
-  [243,"Raikou",["Électrik"]],[244,"Entei",["Électrik"]],[245,"Suicune",["Eau"]],
-  [249,"Lugia",["Eau","Vol"]],[250,"Ho-Oh",["Feu","Vol"]],[251,"Celebi",["Psy","Plante"]]
+  [243,"Raikou",["Électrik"]],[244,"Entei",["Feu"]],[245,"Suicune",["Eau"]],
+  [249,"Lugia",["Psy","Vol"]],[250,"Ho-Oh",["Feu","Vol"]],[251,"Celebi",["Psy","Plante"]]
 ];
 LEGS_GEN2.forEach(a => { PM_GEN2[a[0]] = { id: a[0], n: a[1], t: a[2], e: null, bstMod: 1 }; });
 
@@ -175,7 +175,9 @@ const GYMS_GEN2: Gym[] = [
 
 const ROCKET_GEN2 = [
   { nm:"Sbire Rocket",spr:"rocketgrunt",tm:[{n:"Nosferapti",t:["Poison","Vol"]},{n:"Rattatac",t:["Normal"]}] },
-  { nm:"Commandant Amos",spr:"rocketgrunt",tm:[{n:"Smogogo",t:["Poison"]},{n:"Nostenfer",t:["Poison","Vol"]}] }
+  { nm:"Commandant Amos",spr:"rocketgrunt",tm:[{n:"Smogogo",t:["Poison"]},{n:"Nostenfer",t:["Poison","Vol"]}] },
+  // Intégration de Red comme dernier "boss" de l'équipe pour que le moteur le détecte à la fin
+  { nm:"Légende Red",spr:"red",tm:[{n:"Pikachu",t:["Électrik"]},{n:"Ronflex",t:["Normal"]},{n:"Florizarre",t:["Plante","Poison"]},{n:"Dracaufeu",t:["Feu","Vol"]},{n:"Tortank",t:["Eau"]}] }
 ];
 
 const E4_GEN2 = [
@@ -186,12 +188,11 @@ const E4_GEN2 = [
 ];
 
 const CHAMP_GEN2 = { nm:"Peter",spr:"lance",tm:[{n:"Léviator",t:["Eau","Vol"]},{n:"Ptéra",t:["Roche","Vol"]},{n:"Dracolosse",t:["Dragon","Vol"]}] };
-const RED_BATTLE = { nm:"Légende Red",spr:"red",tm:[{n:"Pikachu",t:["Électrik"]},{n:"Ronflex",t:["Normal"]},{n:"Florizarre",t:["Plante","Poison"]},{n:"Dracaufeu",t:["Feu","Vol"]},{n:"Tortank",t:["Eau"]}] };
 
 const STORY_GEN2: StoryEvent[] = [
   {y:"m",x:"Jules se réveille à Bourg Geon.\nUn garçon aux cheveux rouges rôde..."},
   {y:"s"},{y:"r",s:0},
-  {y:"m",x:"Le Prof. Orme confie un Pokédex à Jules.\nL'aventure à Johto commence !"},
+  {y:"m",x:"Le Prof. Orme confie un Pokédex.\nL'aventure à Johto commence !"},
   {y:"R",p:1,x:"Route 29 — Vers Mauville !"},{y:"g",i:0},
   {y:"R",p:1,x:"Caves Jumelles — La Team Rocket est là !"},{y:"G",i:0},
   {y:"R",p:1,x:"Bois aux Chênes — Vers Écorcia"},{y:"r",s:1},{y:"g",i:1},
@@ -207,15 +208,15 @@ const STORY_GEN2: StoryEvent[] = [
   {y:"R",p:3,x:"Route Victoire — Vers le Plateau Indigo !"},{y:"r",s:3},
   {y:"4",i:0},{y:"4",i:1},{y:"4",i:2},{y:"4",i:3},
   {y:"C"},
-  {y:"choice", x:"🏆 Jules a vaincu la Ligue de Johto !\nVeut-il prendre le bateau pour explorer Kanto ?"},
-  {y:"R",p:2,x:"Le bateau arrive à Carmin-sur-Mer (Kanto) !"},{y:"g",i:8},
+  {y:"choice", x:"🏆 Ligue de Johto vaincue !\nPrendre le bateau pour Kanto ?"},
+  {y:"R",p:2,x:"Le bateau arrive à Carmin-sur-Mer !"},{y:"g",i:8},
   {y:"R",p:1,x:"Route 6 — Vers Safrania"},{y:"g",i:9},{y:"g",i:10},
   {y:"R",p:1,x:"Route 7 — Vers Céladopole"},{y:"g",i:11},{y:"g",i:12},
   {y:"m",x:"La Cave Taupiqueur est débloquée !"},{y:"g",i:13},
   {y:"R",p:2,x:"Bourg Palette — Vers Cramois'Île"},{y:"g",i:14},{y:"g",i:15},
   {y:"m",x:"Les 16 Badges sont réunis !\nLe Mont Argenté est accessible."},
   {y:"R",p:3,x:"Mont Argenté — Froid extrême et Pokémon sauvages puissants..."},
-  {y:"S",i:1}, // Combat final contre RED
+  {y:"S"}, // Lance le dernier élément de ROCKET_GEN2, soit le combat contre Red
   {y:"W"}
 ];
 
@@ -230,13 +231,12 @@ function getRivTmGen2(sid: number | null, st: number): FoePokemon[] {
 }
 
 export const gen2Data: GameData = {
-  id: "gen2", name: "Johto (Génération 2)", themeColor: "#D4AF37", // Or/Argent
+  id: "gen2", name: "Johto (Génération 2)", themeColor: "#D4AF37",
   SE: SE_GEN2, PD: PD_GEN2, PM: PM_GEN2, BST: BST_GEN2, NBST: NBST_GEN2,
   LEGS: LEGS_GEN2, GYMS: GYMS_GEN2, EVIL_TEAM: ROCKET_GEN2, E4: E4_GEN2, CHAMP: CHAMP_GEN2,
   STORY: STORY_GEN2,
   CATCH_IDS: [16,19,41,63,66,74,92,152,155,158,161,163,165,167,177,179,187,193,198,206,207,216,220,227,228,231],
   FISH_IDS: [72,129,170,183,194,211,222,223,226],
   BABY_IDS: [172,173,174,175,236,238,239,240],
-  getRivTm: getRivTmGen2,
-  FINAL_BOSS: RED_BATTLE
+  getRivTm: getRivTmGen2
 };
