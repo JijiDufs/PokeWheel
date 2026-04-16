@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 
 /* ═══════════════ TYPE CHART ═══════════════ */
 const SE: Record<string, Record<string, number>> = {
@@ -255,7 +255,7 @@ const Wheel = forwardRef<WheelRef, WheelProps>(({ items, winIdx, onDone, label, 
   const draw = useCallback((angle: number) => {
     const c = canvasRef.current; if (!c) return;
     const ctx = c.getContext("2d"); if (!ctx) return;
-    const W = c.width, H = c.height, cx = W/2, cy = H/2, R = Math.min(cx,cy) - 12; // Marge de sécurité
+    const W = c.width, H = c.height, cx = W/2, cy = H/2, R = Math.min(cx,cy) - 12;
     ctx.clearRect(0,0,W,H);
     const n = items.length; const arcs = getArcs();
     for (let i = 0; i < n; i++) {
@@ -265,13 +265,12 @@ const Wheel = forwardRef<WheelRef, WheelProps>(({ items, winIdx, onDone, label, 
       ctx.strokeStyle = "#4a4a4a"; ctx.lineWidth = 2; ctx.stroke();
       ctx.save(); ctx.translate(cx,cy); ctx.rotate(a0 + arcs[i].size/2);
       ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 3;
-      const fs = Math.max(12, Math.min(18, Math.floor(320/n))); // Taille police opti
+      const fs = Math.max(12, Math.min(18, Math.floor(320 / (n || 1)))); 
       ctx.font = `bold ${fs}px 'Courier New', Courier, monospace`; ctx.textAlign = "right"; ctx.textBaseline = "middle";
-      const lb = items[i].n || items[i].label || ""; const ml = n > 8 ? 10 : 15; // Raccourcir plus si bcp d'items
-      ctx.fillText(lb.length > ml ? lb.slice(0,ml-1)+"…" : lb, R-24, 0); // Décalage vers le centre (R-24)
+      const lb = items[i].n || items[i].label || ""; const ml = n > 8 ? 10 : 15; 
+      ctx.fillText(lb.length > ml ? lb.slice(0,ml-1)+"…" : lb, R-24, 0); 
       ctx.restore();
     }
-    // Centre style Pokéball
     ctx.beginPath(); ctx.moveTo(cx+R+10,cy); ctx.lineTo(cx+R-14,cy-16); ctx.lineTo(cx+R-14,cy+16); ctx.closePath();
     ctx.fillStyle="#f8f8f8"; ctx.fill(); ctx.strokeStyle="#4a4a4a"; ctx.lineWidth=2; ctx.stroke();
     ctx.beginPath(); ctx.arc(cx,cy,18,0,2*Math.PI); ctx.fillStyle="#f8f8f8"; ctx.fill(); ctx.strokeStyle="#4a4a4a"; ctx.lineWidth=4; ctx.stroke();
@@ -304,7 +303,6 @@ const Wheel = forwardRef<WheelRef, WheelProps>(({ items, winIdx, onDone, label, 
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,width:"100%", flex:1, minHeight:0, justifyContent:"center", padding: "10px 0"}}>
       {label && <div style={{fontSize:14,fontWeight:800,color:"#333",textAlign:"center",background:"#fefdf9",border:"2px solid #4a4a4a",padding:"4px 14px",borderRadius:12,boxShadow:"0 2px 4px rgba(0,0,0,0.1)", zIndex:2}}>{label}</div>}
-      {/* Le canvas s'adapte dynamiquement sans faire déborder le parent */}
       <canvas ref={canvasRef} width={sz} height={sz} onClick={spin} style={{width:"100%", height:"auto", maxHeight:"calc(100% - 30px)", objectFit:"contain", cursor: (!spinning && !done) ? "pointer" : "default"}} />
     </div>
   );
@@ -312,8 +310,8 @@ const Wheel = forwardRef<WheelRef, WheelProps>(({ items, winIdx, onDone, label, 
 
 /* ═══════════════ STYLES & UI ═══════════════ */
 const panelStyle: React.CSSProperties = {
-  background: "#fefdf9", border: "4px solid #4a4a4a", borderRadius: 8, // Couleur crème, bordure franche
-  boxShadow: "inset 0 0 0 2px #d2cbb8, 0 4px 6px rgba(0,0,0,0.05)", // Illusion double bordure par l'intérieur
+  background: "#fefdf9", border: "4px solid #4a4a4a", borderRadius: 8, 
+  boxShadow: "inset 0 0 0 2px #d2cbb8, 0 4px 6px rgba(0,0,0,0.05)", 
   color: "#333", fontFamily: "'Courier New', Courier, monospace", fontWeight: "bold"
 };
 
@@ -323,7 +321,6 @@ function btnStyle(c1: string, c2: string): React.CSSProperties {
 
 /* ═══════════════ ROUTE OPTIONS (Optimisées) ═══════════════ */
 interface RouteOpt { label: string; w: number; a: string; }
-// Raccourcis pour ne pas déborder sur la roue
 const ROPTS: RouteOpt[] = [ {label:"Capture",w:30,a:"catch"},{label:"Pêche",w:12,a:"fish"}, {label:"Dresseur",w:18,a:"trainer"},{label:"Boutique",w:15,a:"shop"}, {label:"Événement",w:10,a:"special"},{label:"Avancer",w:10,a:"nothing"}, {label:"Mystère",w:5,a:"mystery"} ];
 const SPECIAL_EVENTS = [ {label:"Fossile !",a:"fo"},{label:"Œuf !",a:"eg"},{label:"Légendaire",a:"lg"}, {label:"Objet rare",a:"it"},{label:"Échange",a:"tr"},{label:"Dresseur pro",a:"sc"} ];
 
@@ -358,6 +355,11 @@ export default function App() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
   const mob = ww < 850;
+
+  // Sécurise l'affichage des images pour éviter les boucles infinies
+  const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    if (e.currentTarget.src !== FALLBACK_IMG) e.currentTarget.src = FALLBACK_IMG;
+  };
 
   function reset() {
     setTeam([]); setBadges([]); setInv({p:1,sp:0,b:0,r:0}); setSid(null); setStep(0); setPhase("proc");
@@ -404,7 +406,6 @@ export default function App() {
   function doCombat() {
     if (!cCtx) return; const chance = calcWin(team, cCtx.foes, cCtx.d); const pct = Math.round(chance*100);
     setMsg("⚔️ Combat contre "+cCtx.nm+" !\n"+cCtx.foes.map(f=>f.n).join(", "));
-    // Labels plus courts pour la roue !
     showWheel([{label:"Gagner ("+pct+"%)",val:true},{label:"Perdre ("+(100-pct)+"%)",val:false}], Math.random()<chance?0:1, "Combat", it=>it.val?"#2ecc71":"#e74c3c", res=>{ if (res.val) handleWin(); else handleLoss(); }, [pct, 100-pct]);
   }
 
@@ -486,7 +487,7 @@ export default function App() {
 
   /* ═══════════════ RENDER ═══════════════ */
   return (
-    <div style={{height:"100dvh",backgroundColor:"#cce3eb",backgroundImage:"radial-gradient(#b0d0dc 1px, transparent 1px)",backgroundSize:"20px 20px",fontFamily:"'Courier New', Courier, monospace",color:"#333",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
+    <div style={{height:"100vh",backgroundColor:"#cce3eb",backgroundImage:"radial-gradient(#b0d0dc 1px, transparent 1px)",backgroundSize:"20px 20px",fontFamily:"'Courier New', Courier, monospace",color:"#333",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
       
       {/* HEADER THEME */}
       <div style={{background:"#e53935",borderBottom:"4px solid #b71c1c",padding:"8px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0,zIndex:10,color:"#fff",boxShadow:"0 2px 10px rgba(0,0,0,0.15)"}}>
@@ -521,7 +522,7 @@ export default function App() {
               <div style={{display:"flex",overflowX:"auto",gap:6,paddingBottom:2,paddingTop:2}}>
                 {[0,1,2,3,4,5].map(i => team[i] ? (
                   <div key={i} style={{flexShrink:0,border:`2px solid ${TC[team[i].t[0]]||"#ccc"}`,borderRadius:6,background:"#fff",padding:"2px 4px",display:"flex",alignItems:"center",gap:4,minWidth:110}}>
-                    <img src={sprUrl(team[i].id)} alt="" style={{width:32,height:32,imageRendering:"pixelated"}} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />
+                    <img src={sprUrl(team[i].id)} alt="" style={{width:32,height:32,imageRendering:"pixelated"}} onError={handleImgError} />
                     <div style={{overflow:"hidden"}}>
                       <div style={{fontSize:10,fontWeight:"bold",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{team[i].n}</div>
                       <div style={{fontSize:9,color:"#666"}}>BST {getEffBst(team[i])}</div>
@@ -564,8 +565,8 @@ export default function App() {
             {/* Sprites Combat (Prend l'espace libre ou se cache) */}
             {phase !== "wheel" && phase !== "swap" && phase !== "win" && (
               <div style={{display:"flex",alignItems:"flex-end",gap:mob?20:60,justifyContent:"center"}}>
-                <img src={trainerSpr("lucas")} style={{width:mob?100:140,transform:"scaleX(-1)",imageRendering:"pixelated"}} alt="Jules" onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />
-                {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{width:mob?100:140,imageRendering:"pixelated"}} alt={cCtx.nm} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />}
+                <img src={trainerSpr("lucas")} style={{width:mob?100:140,transform:"scaleX(-1)",imageRendering:"pixelated"}} alt="Jules" onError={handleImgError} />
+                {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{width:mob?100:140,imageRendering:"pixelated"}} alt={cCtx.nm} onError={handleImgError} />}
               </div>
             )}
 
@@ -584,7 +585,7 @@ export default function App() {
                       const removed = team[i]; setTeam(t=>{const c=[...t];c[i]=swapData.poke;return c;});
                       setMsg("Remplacement effectué :\n"+swapData.poke.n+" rejoint l'équipe !"); setSwapData(null); swapData.afterFn();
                     }} style={{padding:4,background:"#fff",border:`2px solid ${TC[p.t[0]]||"#888"}`,borderRadius:6,cursor:"pointer"}}>
-                      <img src={sprUrl(p.id)} alt="" style={{width:32,height:32}} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}}/>
+                      <img src={sprUrl(p.id)} alt="" style={{width:32,height:32}} onError={handleImgError}/>
                       <div style={{fontSize:10,fontWeight:"bold"}}>{p.n}</div>
                     </button>
                   ))}
@@ -612,7 +613,7 @@ export default function App() {
             <div style={{display:"flex",flexDirection:"column",gap:8,flex:1,overflowY:"auto"}}>
               {[0,1,2,3,4,5].map(i => team[i] ? (
                 <div key={i} style={{background:"#fff",border:`2px solid ${TC[team[i].t[0]]||"#ccc"}`,borderRadius:8,padding:"6px",display:"flex",alignItems:"center",gap:10}}>
-                  <img src={sprUrl(team[i].id)} style={{width:48,height:48,imageRendering:"pixelated"}} alt="" onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}}/>
+                  <img src={sprUrl(team[i].id)} style={{width:48,height:48,imageRendering:"pixelated"}} alt="" onError={handleImgError}/>
                   <div style={{overflow:"hidden"}}>
                     <div style={{fontSize:14,whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{team[i].n}</div>
                     <div style={{fontSize:11,color:"#666"}}>BST {getEffBst(team[i])}</div>
@@ -634,7 +635,7 @@ export default function App() {
             <button 
               onClick={() => {
                 if (!wheelState.spinning && !wheelState.done) wheelRef.current?.spin();
-                else if (wheelState.done && wCfg) wCfg.onDone(wCfg.items[wCfg.winIdx]);
+                else if (wheelState.done && wCfg) { setMsg(msg); wCfg.onDone(wCfg.items[wCfg.winIdx]); }
               }} 
               disabled={wheelState.spinning}
               style={{...btnStyle(wheelState.done ? "#3498db" : "#e53935", wheelState.done ? "#2980b9" : "#b71c1c"), opacity: wheelState.spinning ? 0.5 : 1}}
