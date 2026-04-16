@@ -432,7 +432,7 @@ export default function App() {
   }
 
   function boostTeamBst() {
-    setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * (1.05 + Math.random() * 0.02) })));
+    setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * 1.03 })));
   }
 
   function nextStep() { setStep(s => s+1); setPhase("proc"); setExtra(""); }
@@ -630,54 +630,70 @@ export default function App() {
       {menuOpen && <div onClick={() => setMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:9}} />}
 
       <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0}}>
-        {/* Main — fixed layout to avoid shifts */}
-        <div style={{flex:1,padding:mob?12:20,display:"flex",flexDirection:"column",alignItems:"center",gap:mob?8:14,overflowY:"auto"}}>
+        {/* Main — split layout desktop: left=text+sprite, right=wheel+actions */}
+        <div style={{flex:1,padding:mob?12:20,display:"flex",flexDirection:mob?"column":"row",alignItems:mob?"center":"stretch",gap:mob?8:24,overflowY:"auto",justifyContent:"center"}}>
 
-          {/* Message box — fixed min height */}
-          <div style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.12)",borderRadius:mob?10:14,padding:mob?"12px 14px":"16px 24px",maxWidth:500,width:"100%",minHeight:mob?60:70,whiteSpace:"pre-line",fontSize:mob?14:16,lineHeight:1.7,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            {msg || "\u00A0"}
+          {/* LEFT COLUMN (desktop) / TOP (mobile): message + trainer sprite */}
+          <div style={{display:"flex",flexDirection:"column",gap:mob?8:12,alignItems:"center",width:mob?"100%":320,maxWidth:mob?500:320,flexShrink:0}}>
+
+            {/* Message box — fixed min height */}
+            <div style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.12)",borderRadius:mob?10:14,padding:mob?"12px 14px":"14px 18px",width:"100%",minHeight:mob?60:90,whiteSpace:"pre-line",fontSize:mob?14:15,lineHeight:1.6,textAlign:mob?"center":"left",display:"flex",alignItems:"center",justifyContent:mob?"center":"flex-start"}}>
+              {msg || "\u00A0"}
+            </div>
+
+            {extra && <div style={{fontSize:13,color:"#2ecc71",fontWeight:700,textAlign:"center",padding:"6px 14px",background:"rgba(46,204,113,.1)",borderRadius:10,width:"100%"}}>{extra}</div>}
+
+            {/* Trainer/player sprite slot — fixed height to avoid shifts */}
+            <div style={{width:"100%",minHeight:mob?0:180,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {(phase==="cpre"||phase==="wheel"||phase==="retry") && cCtx?.spr ? (
+                <div style={{display:"flex",alignItems:"flex-end",gap:mob?10:16,justifyContent:"center"}}>
+                  <img src={trainerSpr("lucas")} alt="Toi" style={{width:mob?60:110,height:mob?60:110,imageRendering:"pixelated",transform:"scaleX(-1)"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
+                  <div style={{fontSize:mob?16:22,color:"#f1c40f"}}>⚔️</div>
+                  <img src={trainerSpr(cCtx.spr)} alt={cCtx.nm} style={{width:mob?60:110,height:mob?60:110,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
+                </div>
+              ) : !mob && (
+                <img src={trainerSpr("lucas")} alt="Toi" style={{width:110,height:110,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
+              )}
+            </div>
           </div>
 
-          {extra && <div style={{fontSize:14,color:"#2ecc71",fontWeight:700,textAlign:"center",padding:"6px 14px",background:"rgba(46,204,113,.1)",borderRadius:10}}>{extra}</div>}
+          {/* RIGHT COLUMN (desktop) / BOTTOM (mobile): wheel + action buttons */}
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:mob?8:14,flex:mob?"none":"0 0 auto",minHeight:mob?0:400}}>
 
-          {phase === "wheel" && wCfg && (
-            <div style={{display:"flex",alignItems:"center",gap:mob?10:20,flexWrap:"wrap",justifyContent:"center"}}>
-              {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} alt="" style={{width:mob?70:120,height:mob?70:120,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />}
-              <Wheel key={wheelKey} items={wCfg.items} winIdx={wCfg.winIdx} onDone={wCfg.onDone} label={wCfg.label} colFn={wCfg.colFn} sizes={wCfg.sizes} sz={mob?250:340} />
-            </div>
-          )}
+            {phase === "wheel" && wCfg && (
+              <Wheel key={wheelKey} items={wCfg.items} winIdx={wCfg.winIdx} onDone={wCfg.onDone} label={wCfg.label} colFn={wCfg.colFn} sizes={wCfg.sizes} sz={mob?240:320} />
+            )}
 
-          {phase === "msg" && <button onClick={nextStep} style={btnStyle("#3498db","#2980b9")}>▶️ Continuer</button>}
+            {phase === "msg" && <button onClick={nextStep} style={btnStyle("#3498db","#2980b9")}>▶️ Continuer</button>}
 
-          {phase === "cpre" && cCtx && (
-            <div style={{textAlign:"center",maxWidth:460,width:"100%"}}>
-              {cCtx.spr && <img src={trainerSpr(cCtx.spr)} alt="" style={{width:mob?70:100,height:mob?70:100,imageRendering:"pixelated",marginBottom:6}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />}
-              <div style={{fontSize:mob?13:15,marginBottom:10,lineHeight:1.8}}>
-                ⚔️ <strong>{cCtx.nm}</strong><br/>
-                {cCtx.foes.map(f=>f.n).join(", ")}<br/>
-                <span style={{color:"#f1c40f",fontWeight:800}}>{Math.round(calcWin(team,cCtx.foes,cCtx.d)*100)}% de victoire</span>
+            {phase === "cpre" && cCtx && (
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:mob?13:15,marginBottom:10,lineHeight:1.8,background:"rgba(0,0,0,.25)",borderRadius:10,padding:"10px 16px"}}>
+                  ⚔️ <strong>{cCtx.nm}</strong><br/>
+                  {cCtx.foes.map(f=>f.n).join(", ")}<br/>
+                  <span style={{color:"#f1c40f",fontWeight:800}}>{Math.round(calcWin(team,cCtx.foes,cCtx.d)*100)}% de victoire</span>
+                </div>
+                <button onClick={doCombat} style={btnStyle("#e74c3c","#c0392b")}>⚔️ Combattre !</button>
               </div>
-              <button onClick={doCombat} style={btnStyle("#e74c3c","#c0392b")}>⚔️ Combattre !</button>
-            </div>
-          )}
+            )}
 
-          {phase === "retry" && <button onClick={doCombat} style={btnStyle("#e67e22","#d35400")}>🔄 Retenter !</button>}
+            {phase === "retry" && <button onClick={doCombat} style={btnStyle("#e67e22","#d35400")}>🔄 Retenter !</button>}
 
-          {phase === "go" && (
-            <div style={{textAlign:"center",display:"flex",flexDirection:"column",gap:10,alignItems:"center"}}>
-              <div style={{fontSize:22,fontWeight:900,color:"#e74c3c"}}>💀 GAME OVER</div>
-              <button onClick={() => {
-                if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); setMsg("Badge "+gym.bd+" obtenu !"); }
-                else setMsg("Tu continues !");
-                const evoR = badges.length<=2?0.40:badges.length<=5?0.50:0.60;
-                const evolvable = team.filter(p=>p.e);
-                if (evolvable.length>0 && Math.random()<evoR) { const pick=evolvable[Math.floor(Math.random()*evolvable.length)]; const evo=gp(pick.e!); if(evo){setTeam(t=>t.map(p=>p.id===pick.id?{...evo,bstMod:p.bstMod||1}:p));setExtra("🌟 "+pick.n+" évolue en "+evo.n+" !");} }
-                const isRoute = cCtx?.ctx==="rt"; setCCtx(null);
-                if(isRoute) finRoute(); else setPhase("msg");
-              }} style={btnStyle("#2ecc71","#27ae60")}>▶️ Continuer quand même</button>
-              {team.length>1 && <button onClick={() => {
-                const ri=Math.floor(Math.random()*team.length); setExtra(team[ri].n+" perdu..."); setTeam(t=>t.filter((_,i)=>i!==ri)); setPhase("cpre");
-              }} style={btnStyle("#e67e22","#d35400")}>Continuer (-1 Pokémon)</button>}
+            {phase === "go" && (
+              <div style={{textAlign:"center",display:"flex",flexDirection:"column",gap:10,alignItems:"center"}}>
+                <div style={{fontSize:22,fontWeight:900,color:"#e74c3c"}}>💀 GAME OVER</div>
+                <button onClick={() => {
+                  if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); setMsg("Badge "+gym.bd+" obtenu !"); }
+                  else setMsg("Tu continues !");
+                  const evoR = badges.length<=2?0.40:badges.length<=5?0.50:0.60;
+                  const evolvable = team.filter(p=>p.e);
+                  if (evolvable.length>0 && Math.random()<evoR) { const pick=evolvable[Math.floor(Math.random()*evolvable.length)]; const evo=gp(pick.e!); if(evo){setTeam(t=>t.map(p=>p.id===pick.id?{...evo,bstMod:p.bstMod||1}:p));setExtra("🌟 "+pick.n+" évolue en "+evo.n+" !");} }
+                  const isRoute = cCtx?.ctx==="rt"; setCCtx(null);
+                  if(isRoute) finRoute(); else setPhase("msg");
+                }} style={btnStyle("#2ecc71","#27ae60")}>▶️ Continuer quand même</button>
+                {team.length>1 && <button onClick={() => {
+                  const ri=Math.floor(Math.random()*team.length); setExtra(team[ri].n+" perdu..."); setTeam(t=>t.filter((_,i)=>i!==ri)); setPhase("cpre");
+                }} style={btnStyle("#e67e22","#d35400")}>Continuer (-1 Pokémon)</button>}
               <button onClick={reset} style={btnStyle("#e74c3c","#c0392b")}>Recommencer</button>
             </div>
           )}
@@ -731,6 +747,7 @@ export default function App() {
               <button onClick={reset} style={btnStyle("#f1c40f","#e67e22")}>🔄 Nouvelle partie</button>
             </div>
           )}
+          </div>{/* end right column */}
         </div>
 
         {/* ═══ Bottom Panel ═══ */}
@@ -757,7 +774,45 @@ export default function App() {
 
           {!mob && <div style={{width:2,alignSelf:"stretch",background:"rgba(255,255,255,.08)",borderRadius:1}} />}
 
-          {/* Badges + Inv row mobile */}
+          {/* Badges desktop */}
+          {!mob && (
+            <div style={{minWidth:180}}>
+              <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#f1c40f",textAlign:"center"}}>🏅 Badges ({badges.length}/8)</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
+                {GYMS.map((g,i) => {
+                  const has = badges.includes(g.bd);
+                  return <div key={i} title={g.nm} style={{borderRadius:5,padding:"3px 2px",textAlign:"center",fontSize:has?12:7,fontWeight:700,background:has?TC[g.tp]:"rgba(255,255,255,.04)",color:has?"#fff":"rgba(255,255,255,.2)",border:has?"2px solid #f1c40f":"1px solid rgba(255,255,255,.06)"}}>
+                    {has?"⭐":"—"}<div style={{fontSize:7,marginTop:1,opacity:has?1:0.3}}>{g.bd}</div>
+                  </div>;
+                })}
+              </div>
+            </div>
+          )}
+
+          {!mob && <div style={{width:2,alignSelf:"stretch",background:"rgba(255,255,255,.08)",borderRadius:1}} />}
+
+          {/* Team with sprites */}
+          <div style={{flex:1,minWidth:mob?0:200,width:mob?"100%":"auto"}}>
+            <div style={{fontSize:mob?10:12,fontWeight:800,marginBottom:mob?3:5,color:"#3498db",textAlign:"center"}}>👥 Équipe ({team.length}/6)</div>
+            <div style={{display:"grid",gridTemplateColumns:mob?"repeat(3,1fr)":"repeat(6,1fr)",gap:mob?4:6}}>
+              {[0,1,2,3,4,5].map(i => {
+                const p = team[i];
+                if (!p) return <div key={"e"+i} style={{height:mob?90:110,borderRadius:6,background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"rgba(255,255,255,.12)"}}>vide</div>;
+                return (
+                  <div key={p.id+"-"+i} style={{background:"rgba(255,255,255,.07)",borderRadius:6,padding:mob?"3px":"4px",borderBottom:"3px solid "+(TC[p.t[0]]||"#888"),textAlign:"center"}}>
+                    <img src={sprUrl(p.id)} alt="" style={{width:mob?48:56,height:mob?48:56,imageRendering:"pixelated",display:"block",margin:"0 auto"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
+                    <div style={{fontSize:mob?10:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.n}</div>
+                    <div style={{display:"flex",gap:2,justifyContent:"center",marginTop:2,flexWrap:"wrap"}}>
+                      {p.t.map(tp => <span key={tp} style={{fontSize:mob?6:7,padding:"1px 4px",borderRadius:3,background:TC[tp],color:"#fff",fontWeight:600}}>{tp}</span>)}
+                    </div>
+                    <div style={{fontSize:mob?8:9,color:"rgba(255,255,255,.4)",marginTop:2}}>BST {getEffBst(p)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Badges + Inv row mobile (after team) */}
           {mob && (
             <div style={{display:"flex",gap:8}}>
               <div style={{flex:1}}>
@@ -783,45 +838,7 @@ export default function App() {
               </div>
             </div>
           )}
-
-          {/* Badges desktop */}
-          {!mob && (
-            <div style={{minWidth:180}}>
-              <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#f1c40f",textAlign:"center"}}>🏅 Badges ({badges.length}/8)</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
-                {GYMS.map((g,i) => {
-                  const has = badges.includes(g.bd);
-                  return <div key={i} title={g.nm} style={{borderRadius:5,padding:"3px 2px",textAlign:"center",fontSize:has?12:7,fontWeight:700,background:has?TC[g.tp]:"rgba(255,255,255,.04)",color:has?"#fff":"rgba(255,255,255,.2)",border:has?"2px solid #f1c40f":"1px solid rgba(255,255,255,.06)"}}>
-                    {has?"⭐":"—"}<div style={{fontSize:7,marginTop:1,opacity:has?1:0.3}}>{g.bd}</div>
-                  </div>;
-                })}
-              </div>
-            </div>
-          )}
-
           {!mob && <div style={{width:2,alignSelf:"stretch",background:"rgba(255,255,255,.08)",borderRadius:1}} />}
-
-          {/* Team with sprites */}
-          <div style={{flex:1,minWidth:mob?0:200,width:mob?"100%":"auto"}}>
-            <div style={{fontSize:mob?10:12,fontWeight:800,marginBottom:mob?3:5,color:"#3498db",textAlign:"center"}}>👥 Équipe ({team.length}/6)</div>
-            <div style={{display:"grid",gridTemplateColumns:mob?"repeat(3,1fr)":"repeat(6,1fr)",gap:mob?3:5}}>
-              {[0,1,2,3,4,5].map(i => {
-                const p = team[i];
-                if (!p) return <div key={"e"+i} style={{height:mob?50:65,borderRadius:6,background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"rgba(255,255,255,.12)"}}>vide</div>;
-                return (
-                  <div key={p.id+"-"+i} style={{background:"rgba(255,255,255,.07)",borderRadius:6,padding:mob?"2px":"3px",borderBottom:"3px solid "+(TC[p.t[0]]||"#888"),textAlign:"center"}}>
-                    <img src={sprUrl(p.id)} alt="" style={{width:mob?28:36,height:mob?28:36,imageRendering:"pixelated",display:"block",margin:"0 auto"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                    <div style={{fontSize:mob?9:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.n}</div>
-                    <div style={{fontSize:mob?7:8,color:"rgba(255,255,255,.4)"}}>BST {getEffBst(p)}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {!mob && <div style={{width:2,alignSelf:"stretch",background:"rgba(255,255,255,.08)",borderRadius:1}} />}
-
-          {/* Inv desktop */}
           {!mob && (
             <div style={{minWidth:130}}>
               <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#2ecc71",textAlign:"center"}}>🎒 Inventaire</div>
