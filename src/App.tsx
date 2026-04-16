@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 
 /* ═══════════════ TYPE CHART ═══════════════ */
 const SE: Record<string, Record<string, number>> = {
@@ -22,18 +22,8 @@ const SE: Record<string, Record<string, number>> = {
   "Fée": { Feu: 0.5, Poison: 0.5, Combat: 2, Dragon: 2, "Ténèbres": 2, Acier: 0.5 }
 };
 
-interface Pokemon {
-  id: number;
-  n: string;
-  t: string[];
-  e: number | null;
-  bstMod?: number;
-}
-
-interface FoePokemon {
-  n: string;
-  t: string[];
-}
+interface Pokemon { id: number; n: string; t: string[]; e: number | null; bstMod?: number; }
+interface FoePokemon { n: string; t: string[]; }
 
 /* ═══════════════ POKEMON DATA ═══════════════ */
 const PD: [number, string, string[], number][] = [
@@ -153,31 +143,23 @@ const NBST: Record<string, number> = {
   "Chimpenfeu":405,"Prinplouf":405,"Tortipouss":318,"Ouisticram":309,"Tiplouf":314
 };
 
-function getEffBst(p: Pokemon): number {
-  return Math.round((BST[p.id] || 300) * (p.bstMod || 1));
-}
+function getEffBst(p: Pokemon): number { return Math.round((BST[p.id] || 300) * (p.bstMod || 1)); }
 
 function calcWin(team: Pokemon[], foes: FoePokemon[], diff: number): number {
   if (!team.length) return 0.15;
   let typeScore = 0;
-  team.forEach(function (p) {
-    foes.forEach(function (o) {
-      p.t.forEach(function (a) {
+  team.forEach(p => {
+    foes.forEach(o => {
+      p.t.forEach(a => {
         let m = 1;
-        o.t.forEach(function (d) { if (SE[a] && SE[a][d] !== undefined) m *= SE[a][d]; });
+        o.t.forEach(d => { if (SE[a] && SE[a][d] !== undefined) m *= SE[a][d]; });
         if (m >= 2) typeScore += 12; else if (m > 1) typeScore += 6; else if (m < 1 && m > 0) typeScore -= 5; else if (m === 0) typeScore -= 8;
       });
     });
   });
-  let teamBST = 0;
-  team.forEach(function (p) { teamBST += getEffBst(p); });
-  teamBST = teamBST / team.length;
-  let foeBST = 0;
-  foes.forEach(function (o) { foeBST += (NBST[o.n] || 400); });
-  foeBST = foeBST / foes.length;
-  const statBonus = (teamBST - foeBST) / 1000;
-  const sizeBonus = (team.length - foes.length) * 0.04;
-  return Math.max(0.10, Math.min(0.92, 0.50 + typeScore / 100 + statBonus + sizeBonus - (diff || 0)));
+  let teamBST = 0; team.forEach(p => { teamBST += getEffBst(p); }); teamBST /= team.length;
+  let foeBST = 0; foes.forEach(o => { foeBST += (NBST[o.n] || 400); }); foeBST /= foes.length;
+  return Math.max(0.10, Math.min(0.92, 0.50 + typeScore / 100 + (teamBST - foeBST) / 1000 + (team.length - foes.length) * 0.04 - (diff || 0)));
 }
 
 const CATCH_IDS = PD.map(p => p[0]).filter(id => [387,388,389,390,391,392,393,394,395].indexOf(id) === -1);
@@ -220,26 +202,26 @@ function rivTm(sid: number | null, st: number): FoePokemon[] {
 /* ═══════════════ STORY ═══════════════ */
 interface StoryEvent { y: string; x?: string; s?: number; p?: number; i?: number; }
 const STORY: StoryEvent[] = [
-  {y:"m",x:"Tu te réveilles à Bonaugure, dans la région de Sinnoh. Ton rival Barry t'attend — direction le Lac Vérité !"},
-  {y:"m",x:"Des Pokémon sauvages attaquent ! La mallette du Professeur Sorbier contient 3 Pokémon..."},
+  {y:"m",x:"Tu te réveilles à Bonaugure.\nTon rival Barry t'attend !"},
+  {y:"m",x:"Des Pokémon sauvages attaquent !\nChoisis dans la mallette..."},
   {y:"s"},{y:"r",s:0},
   {y:"m",x:"Le Professeur Sorbier te confie le Pokédex. L'aventure commence !"},
   {y:"R",p:1,x:"Route 202 — Vers Charbourg !"},{y:"g",i:0},
-  {y:"m",x:"Badge Charbon obtenu ! La Team Galaxie rôde à Féli-Cité..."},
+  {y:"m",x:"Badge Charbon obtenu !\nLa Team Galaxie rôde..."},
   {y:"R",p:1,x:"Route 205 — Vers Vestigion !"},{y:"g",i:1},{y:"r",s:1},
   {y:"R",p:2,x:"Route 206 — Vers Voilaroc !"},{y:"g",i:2},
   {y:"m",x:"La Team Galaxie vole des Pokémon !"},{y:"G",i:2},
   {y:"R",p:2,x:"Route 212 — Vers Verchamps !"},{y:"g",i:3},
   {y:"R",p:2,x:"Route 209 — Vers Unionpolis !"},{y:"g",i:4},{y:"r",s:2},
-  {y:"R",p:2,x:"Route 218 — Cap sur Joliberges !"},{y:"g",i:5},
-  {y:"m",x:"💥 EXPLOSION au Lac Courage ! La Team Galaxie attaque !"},
+  {y:"R",p:2,x:"Route 218 — Vers Joliberges !"},{y:"g",i:5},
+  {y:"m",x:"💥 EXPLOSION au Lac Courage !\nLa Team Galaxie attaque !"},
   {y:"G",i:2},{y:"G",i:0},
-  {y:"R",p:3,x:"Route 216 — Tempête de neige vers Frimapic !"},{y:"g",i:6},
-  {y:"m",x:"Ton rival a perdu contre Jupiter... Direction le QG Galaxie !"},
+  {y:"R",p:3,x:"Route 216 — Tempête vers Frimapic !"},{y:"g",i:6},
+  {y:"m",x:"Barry a perdu contre Jupiter...\nDirection le QG Galaxie !"},
   {y:"G",i:1},{y:"G",i:3},
-  {y:"m",x:"Pokémon des lacs libérés ! Hélio est au Pilier Lance !"},{y:"S"},
-  {y:"R",p:3,x:"Route 222 — Dernière arène à Rivamar !"},{y:"g",i:7},
-  {y:"m",x:"🎉 8 Badges ! La Ligue Pokémon t'attend !"},{y:"r",s:3},
+  {y:"m",x:"Lacs libérés ! Hélio est au Pilier Lance !"},{y:"S"},
+  {y:"R",p:3,x:"Route 222 — Arène à Rivamar !"},{y:"g",i:7},
+  {y:"m",x:"🎉 8 Badges !\nLa Ligue Pokémon t'attend !"},{y:"r",s:3},
   {y:"R",p:3,x:"Route Victoire — Dernière ligne droite !"},
   {y:"4",i:0},{y:"4",i:1},{y:"4",i:2},{y:"4",i:3},
   {y:"C"},{y:"W"}
@@ -249,35 +231,32 @@ const STORY: StoryEvent[] = [
 const TC: Record<string,string> = {Normal:"#A8A878",Feu:"#F08030",Eau:"#6890F0",Plante:"#78C850","Électrik":"#F8D030",Glace:"#98D8D8",Combat:"#C03028",Poison:"#A040A0",Sol:"#E0C068",Vol:"#A890F0",Psy:"#F85888",Insecte:"#A8B820",Roche:"#B8A038",Spectre:"#705898",Dragon:"#7038F8","Ténèbres":"#705848",Acier:"#B8B8D0","Fée":"#EE99AC"};
 const WCOLS = ["#e74c3c","#e67e22","#f1c40f","#27ae60","#1abc9c","#3498db","#9b59b6","#e91e63","#00bcd4","#8bc34a","#ff9800","#607d8b"];
 
-/* ═══════════════ WHEEL ═══════════════ */
+/* ═══════════════ WHEEL (Refactored for parent control) ═══════════════ */
 interface WheelItem { n?: string; label?: string; id?: number; t?: string[]; e?: number | null; val?: boolean; k?: string; a?: string; bstMod?: number; }
-interface WheelProps { items: WheelItem[]; winIdx: number; onDone: (item: WheelItem) => void; label?: string; colFn?: (item: WheelItem, i: number) => string; sizes?: number[] | null; sz?: number; }
+interface WheelProps { items: WheelItem[]; winIdx: number; onDone: (item: WheelItem) => void; label?: string; colFn?: (item: WheelItem, i: number) => string; sizes?: number[] | null; sz?: number; onStateChange?: (spinning: boolean, done: boolean) => void; }
+export interface WheelRef { spin: () => void; }
 
-function Wheel({ items, winIdx, onDone, label, colFn, sizes, sz = 360 }: WheelProps) {
-  const ref = useRef<HTMLCanvasElement>(null);
+const Wheel = forwardRef<WheelRef, WheelProps>(({ items, winIdx, onDone, label, colFn, sizes, sz = 360, onStateChange }, ref) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const angRef = useRef(0);
   const animRef = useRef<number | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [done, setDone] = useState(false);
 
   function getArcs() {
-    const n = items.length;
-    let totalSz = 0;
-    const szArr: number[] = [];
+    const n = items.length; let totalSz = 0; const szArr: number[] = [];
     for (let i = 0; i < n; i++) { const s = sizes?.[i] ?? 1; szArr.push(s); totalSz += s; }
-    const arcs: { start: number; size: number }[] = [];
-    let cum = 0;
+    const arcs: { start: number; size: number }[] = []; let cum = 0;
     for (let j = 0; j < n; j++) { const a = (szArr[j] / totalSz) * 2 * Math.PI; arcs.push({ start: cum, size: a }); cum += a; }
     return arcs;
   }
 
-  const draw = useCallback(function (angle: number) {
-    const c = ref.current; if (!c) return;
+  const draw = useCallback((angle: number) => {
+    const c = canvasRef.current; if (!c) return;
     const ctx = c.getContext("2d"); if (!ctx) return;
     const W = c.width, H = c.height, cx = W/2, cy = H/2, R = Math.min(cx,cy) - 14;
     ctx.clearRect(0,0,W,H);
-    const n = items.length;
-    const arcs = getArcs();
+    const n = items.length; const arcs = getArcs();
     for (let i = 0; i < n; i++) {
       const a0 = angle + arcs[i].start, a1 = a0 + arcs[i].size;
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,a0,a1); ctx.closePath();
@@ -286,12 +265,9 @@ function Wheel({ items, winIdx, onDone, label, colFn, sizes, sz = 360 }: WheelPr
       ctx.save(); ctx.translate(cx,cy); ctx.rotate(a0 + arcs[i].size/2);
       ctx.fillStyle = "#fff";
       const fs = Math.max(10, Math.min(16, Math.floor(320/n)));
-      ctx.font = `bold ${fs}px 'Trebuchet MS', sans-serif`;
-      ctx.textAlign = "right"; ctx.textBaseline = "middle";
-      const lb = items[i].n || items[i].label || "";
-      const ml = n > 12 ? 10 : 18;
-      ctx.fillText(lb.length > ml ? lb.slice(0,ml-1)+"…" : lb, R-18, 0);
-      ctx.restore();
+      ctx.font = `bold ${fs}px 'Trebuchet MS', sans-serif`; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      const lb = items[i].n || items[i].label || ""; const ml = n > 12 ? 10 : 18;
+      ctx.fillText(lb.length > ml ? lb.slice(0,ml-1)+"…" : lb, R-18, 0); ctx.restore();
     }
     ctx.beginPath(); ctx.moveTo(cx+R+10,cy); ctx.lineTo(cx+R-14,cy-16); ctx.lineTo(cx+R-14,cy+16); ctx.closePath();
     ctx.fillStyle="#f1c40f"; ctx.fill(); ctx.strokeStyle="#0f0c29"; ctx.lineWidth=2; ctx.stroke();
@@ -301,75 +277,53 @@ function Wheel({ items, winIdx, onDone, label, colFn, sizes, sz = 360 }: WheelPr
 
   useEffect(() => { draw(angRef.current); }, [draw]);
 
-  function spin() {
+  const spin = () => {
     if (spinning || done) return;
     setSpinning(true);
-    const arcs = getArcs();
-    const seg = arcs[winIdx];
-    const margin = seg.size * 0.15;
-    const randomOffset = margin + Math.random() * (seg.size - 2 * margin);
+    onStateChange?.(true, false);
+    const arcs = getArcs(); const seg = arcs[winIdx];
+    const margin = seg.size * 0.15; const randomOffset = margin + Math.random() * (seg.size - 2 * margin);
     const targetAngle = seg.start + randomOffset;
     const target = -targetAngle + Math.PI * 2 * (5 + Math.floor(Math.random() * 3));
-    const startAngle = angRef.current;
-    const totalRot = target - startAngle;
-    const duration = 2800 + Math.random() * 600;
-    const t0 = performance.now();
+    const startAngle = angRef.current; const totalRot = target - startAngle;
+    const duration = 2800 + Math.random() * 600; const t0 = performance.now();
     function animate(now: number) {
-      const p = Math.min((now - t0) / duration, 1);
-      const ease = 1 - Math.pow(1 - p, 4);
-      const cur = startAngle + totalRot * ease;
-      angRef.current = cur;
-      draw(cur);
+      const p = Math.min((now - t0) / duration, 1); const ease = 1 - Math.pow(1 - p, 4);
+      const cur = startAngle + totalRot * ease; angRef.current = cur; draw(cur);
       if (p < 1) { animRef.current = requestAnimationFrame(animate); }
-      else { setSpinning(false); setDone(true); }
+      else { setSpinning(false); setDone(true); onStateChange?.(false, true); }
     }
     animRef.current = requestAnimationFrame(animate);
-  }
+  };
+
+  useImperativeHandle(ref, () => ({ spin }));
 
   useEffect(() => { return () => { if (animRef.current) cancelAnimationFrame(animRef.current); }; }, []);
 
-  const resLabel = done ? (items[winIdx].n || items[winIdx].label || "") : "";
   return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
-      {label && <div style={{fontSize:18,fontWeight:800,color:"#f0e6d3",textAlign:"center"}}>{label}</div>}
-      <canvas 
-        ref={ref} 
-        width={sz} 
-        height={sz} 
-        onClick={spin}
-        style={{maxWidth:"100%", cursor: (!spinning && !done) ? "pointer" : "default"}} 
-      />
-      {!spinning && !done && <button onClick={spin} style={btnStyle("#e74c3c","#c0392b")}>🎰 Tourner la roue !</button>}
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,width:"100%"}}>
+      {label && <div style={{fontSize:16,fontWeight:800,color:"#f0e6d3",textAlign:"center",background:"rgba(0,0,0,0.4)",padding:"4px 12px",borderRadius:20}}>{label}</div>}
+      <canvas ref={canvasRef} width={sz} height={sz} onClick={spin} style={{maxWidth:"100%", maxHeight: "35vh", objectFit:"contain", cursor: (!spinning && !done) ? "pointer" : "default"}} />
       {done && (
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-          <div style={{background:"rgba(46,204,113,.15)",border:"2px solid #2ecc71",borderRadius:10,padding:"10px 24px",fontSize:20,fontWeight:800,color:"#2ecc71"}}>{"✨ "+resLabel}</div>
-          <button onClick={() => onDone(items[winIdx])} style={btnStyle("#3498db","#2980b9")}>▶️ Continuer</button>
+        <div style={{background:"rgba(46,204,113,.15)",border:"2px solid #2ecc71",borderRadius:10,padding:"6px 16px",fontSize:16,fontWeight:800,color:"#2ecc71",marginTop:4}}>
+          {"✨ " + (items[winIdx].n || items[winIdx].label || "")}
         </div>
       )}
     </div>
   );
-}
+});
 
+/* ═══════════════ STYLES & UI ═══════════════ */
 function btnStyle(c1: string, c2: string): React.CSSProperties {
-  return {padding:"14px 32px",fontSize:16,fontWeight:700,cursor:"pointer",background:`linear-gradient(135deg,${c1},${c2})`,color:"#fff",border:"none",borderRadius:10,boxShadow:"0 4px 16px rgba(0,0,0,.3)",letterSpacing:0.5,minHeight:48,touchAction:"manipulation"};
+  return {padding:"10px 20px",fontSize:14,fontWeight:700,cursor:"pointer",background:`linear-gradient(135deg,${c1},${c2})`,color:"#fff",border:"none",borderRadius:8,boxShadow:"0 2px 8px rgba(0,0,0,.3)",letterSpacing:0.5,whiteSpace:"nowrap"};
 }
 
-/* ═══════════════ POKEBOX STYLE (UI Améliorée) ═══════════════ */
 const pokeBoxStyle: React.CSSProperties = {
-  background: "#f8f8f8",
-  border: "4px solid #4a4a4a",
-  borderRadius: 8,
-  boxShadow: "inset 0 0 0 4px #e0e0e0, 0 4px 10px rgba(0,0,0,0.5)",
-  color: "#222",
-  fontFamily: "'Courier New', Courier, monospace",
-  fontWeight: 900,
-  padding: "16px 20px",
-  minHeight: 80,
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  width: "100%",
-  flex: 1
+  background: "#f8f8f8", border: "3px solid #4a4a4a", borderRadius: 8,
+  boxShadow: "inset 0 0 0 2px #e0e0e0, 0 4px 8px rgba(0,0,0,0.4)",
+  color: "#222", fontFamily: "'Courier New', Courier, monospace", fontWeight: 800,
+  padding: "8px 12px", minHeight: 45, display: "flex", flexDirection: "column",
+  justifyContent: "center", flex: 1, width: "100%", overflow: "hidden"
 };
 
 /* ═══════════════ HELPERS ═══════════════ */
@@ -389,17 +343,8 @@ function weightedIdx(items: {w:number}[]) {
 
 /* ═══════════════ ROUTE OPTIONS ═══════════════ */
 interface RouteOpt { label: string; w: number; a: string; }
-const ROPTS: RouteOpt[] = [
-  {label:"Capturer un Pokémon",w:30,a:"catch"},{label:"Aller pêcher",w:12,a:"fish"},
-  {label:"Combat de dresseur",w:18,a:"trainer"},{label:"Aller au shop",w:15,a:"shop"},
-  {label:"Événement spécial",w:10,a:"special"},{label:"Rien, on avance",w:10,a:"nothing"},
-  {label:"Rencontre mystérieuse",w:5,a:"mystery"}
-];
-const SPECIAL_EVENTS = [
-  {label:"Fossile trouvé !",a:"fo"},{label:"Œuf mystérieux",a:"eg"},{label:"Légendaire rare !",a:"lg"},
-  {label:"Objet rare",a:"it"},{label:"Échange PNJ",a:"tr"},{label:"Dresseur secret",a:"sc"}
-];
-
+const ROPTS: RouteOpt[] = [ {label:"Capturer un Pokémon",w:30,a:"catch"},{label:"Aller pêcher",w:12,a:"fish"}, {label:"Combat de dresseur",w:18,a:"trainer"},{label:"Aller au shop",w:15,a:"shop"}, {label:"Événement spécial",w:10,a:"special"},{label:"Rien, on avance",w:10,a:"nothing"}, {label:"Rencontre mystérieuse",w:5,a:"mystery"} ];
+const SPECIAL_EVENTS = [ {label:"Fossile trouvé !",a:"fo"},{label:"Œuf mystérieux",a:"eg"},{label:"Légendaire rare !",a:"lg"}, {label:"Objet rare",a:"it"},{label:"Échange PNJ",a:"tr"},{label:"Dresseur secret",a:"sc"} ];
 interface CombatCtx { nm:string; foes:FoePokemon[]; d:number; ctx:string; gi?:number; spr?:string; }
 interface SwapData { poke:Pokemon; afterMsg:string; afterFn:()=>void; }
 interface WheelCfg { items:WheelItem[]; winIdx:number; label:string; colFn:(item:WheelItem,i:number)=>string; onDone:(item:WheelItem)=>void; sizes:number[]|null; }
@@ -414,6 +359,8 @@ export default function App() {
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState("proc");
   const [wCfg, setWCfg] = useState<WheelCfg|null>(null);
+  const [wheelState, setWheelState] = useState({ spinning: false, done: false });
+  const wheelRef = useRef<WheelRef>(null);
   const [msg, setMsg] = useState("");
   const [rSpins, setRSpins] = useState(0);
   const [cCtx, setCCtx] = useState<CombatCtx|null>(null);
@@ -433,38 +380,21 @@ export default function App() {
 
   function reset() {
     setTeam([]); setBadges([]); setInv({p:1,sp:0,b:0,r:0}); setSid(null); setStep(0); setPhase("proc");
-    setWCfg(null); setMsg(""); setRSpins(0); setCCtx(null); setExtra(""); setWheelKey(0);
-    setSwapData(null); setRetriesLeft(0); setMenuOpen(false);
+    setWCfg(null); setWheelState({ spinning: false, done: false }); setMsg(""); setRSpins(0);
+    setCCtx(null); setExtra(""); setWheelKey(0); setSwapData(null); setRetriesLeft(0); setMenuOpen(false);
   }
-
-  function makePoke(pk: Pokemon): Pokemon {
-    return { id:pk.id, n:pk.n, t:pk.t, e:pk.e, bstMod: pk.bstMod || 1 };
-  }
-
-  function addPoke(pk: Pokemon) {
-    setTeam(prev => [...prev, makePoke(pk)]);
-    setExtra(pk.n + " rejoint ton équipe !");
-  }
-
+  function makePoke(pk: Pokemon): Pokemon { return { id:pk.id, n:pk.n, t:pk.t, e:pk.e, bstMod: pk.bstMod || 1 }; }
+  function addPoke(pk: Pokemon) { setTeam(prev => [...prev, makePoke(pk)]); setExtra(pk.n + " rejoint ton équipe !"); }
   function capturePoke(pk: Pokemon, afterMsg: string, afterFn: () => void) {
     if (team.length < 6) { addPoke(pk); setMsg(afterMsg); afterFn(); }
-    else {
-      setSwapData({ poke: makePoke(pk), afterMsg, afterFn });
-      setMsg(pk.n + " veut rejoindre ton équipe, mais elle est pleine !");
-      setPhase("swap");
-    }
+    else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg("L'équipe est pleine !"); setPhase("swap"); }
   }
-
-  function boostTeamBst() {
-    setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * 1.03 })));
-  }
-
+  function boostTeamBst() { setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * 1.03 }))); }
   function nextStep() { setStep(s => s+1); setPhase("proc"); setExtra(""); }
-
   function showWheel(items: WheelItem[], winIdx: number, label: string, colFn: (item:WheelItem,i:number)=>string, onDone: (item:WheelItem)=>void, sizes?: number[]|null) {
     setWCfg({items, winIdx, label, colFn, onDone, sizes: sizes||null});
-    setWheelKey(k => k+1);
-    setPhase("wheel");
+    setWheelState({ spinning: false, done: false });
+    setWheelKey(k => k+1); setPhase("wheel");
   }
 
   // Process step
@@ -475,370 +405,303 @@ export default function App() {
     else if (ev.y === "s") {
       setMsg("La mallette s'ouvre...");
       const starters = [gp(387),gp(390),gp(393)];
-      const wi = Math.floor(Math.random()*3);
-      showWheel(starters, wi, "🔥 Quel starter vas-tu obtenir ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n+" te choisit !"); setPhase("msg"); });
+      showWheel(starters, Math.floor(Math.random()*3), "🔥 Starter ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n+" te choisit !"); setPhase("msg"); });
     }
     else if (ev.y === "r") {
-      const rt = rivTm(sid, ev.s!);
-      setMsg("⚔️ Barry te défie !");
-      const rivDiff = [-0.10,-0.05,0,0.05];
-      setCCtx({nm:"Barry (Rival)",foes:rt,d:rivDiff[Math.min(ev.s!,3)]||0,ctx:"rival",spr:"barry"}); setPhase("cpre");
+      const rt = rivTm(sid, ev.s!); setMsg("⚔️ Barry te défie !");
+      setCCtx({nm:"Barry (Rival)",foes:rt,d:[-0.10,-0.05,0,0.05][Math.min(ev.s!,3)]||0,ctx:"rival",spr:"barry"}); setPhase("cpre");
     }
-    else if (ev.y === "g") { const g = GYMS[ev.i!]; setMsg("🏟️ Arène de "+g.ct+" — "+g.nm); setCCtx({nm:g.nm,foes:g.tm,d:g.df,ctx:"gym",gi:ev.i!,spr:g.spr}); setPhase("cpre"); }
-    else if (ev.y === "G") { const c = GAL[ev.i!]; setMsg("👾 Team Galaxie — Commandant "+c.nm); setCCtx({nm:"Cmd. "+c.nm,foes:c.tm,d:0,ctx:"gal",spr:c.spr}); setPhase("cpre"); }
+    else if (ev.y === "g") { const g = GYMS[ev.i!]; setMsg("🏟️ "+g.nm+" ("+g.ct+")"); setCCtx({nm:g.nm,foes:g.tm,d:g.df,ctx:"gym",gi:ev.i!,spr:g.spr}); setPhase("cpre"); }
+    else if (ev.y === "G") { const c = GAL[ev.i!]; setMsg("👾 Cmd. "+c.nm); setCCtx({nm:"Cmd. "+c.nm,foes:c.tm,d:0,ctx:"gal",spr:c.spr}); setPhase("cpre"); }
     else if (ev.y === "R") { setMsg(ev.x!); setRSpins(ev.p!); setPhase("route"); }
     else if (ev.y === "S") { setMsg("⛰️ Pilier Lance !"); setCCtx({nm:"Hélio",foes:GAL[3].tm,d:0.10,ctx:"spear",spr:"cyrus"}); setPhase("cpre"); }
-    else if (ev.y === "4") { const e = E4[ev.i!]; setMsg("🏛️ Conseil 4 — "+e.nm); setCCtx({nm:e.nm,foes:e.tm,d:0.10,ctx:"e4",spr:e.spr}); setPhase("cpre"); }
+    else if (ev.y === "4") { const e = E4[ev.i!]; setMsg("🏛️ "+e.nm); setCCtx({nm:e.nm,foes:e.tm,d:0.10,ctx:"e4",spr:e.spr}); setPhase("cpre"); }
     else if (ev.y === "C") { setMsg("👑 Cynthia !"); setCCtx({nm:"Cynthia",foes:CYN.tm,d:0.15,ctx:"champ",spr:CYN.spr}); setPhase("cpre"); }
-    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS ! Tu es le nouveau Maître de Sinnoh ! 🏆"); setPhase("win"); }
+    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS ! Tu es le Maître ! 🏆"); setPhase("win"); }
   }, [phase, step]);
 
   function doCombat() {
-    if (!cCtx) return;
-    const chance = calcWin(team, cCtx.foes, cCtx.d);
-    const pct = Math.round(chance*100);
-    const won = Math.random() < chance;
-    const combatItems: WheelItem[] = [{label:"Victoire ! ("+pct+"%)",val:true},{label:"Défaite... ("+(100-pct)+"%)",val:false}];
+    if (!cCtx) return; const chance = calcWin(team, cCtx.foes, cCtx.d); const pct = Math.round(chance*100);
     setMsg("⚔️ "+cCtx.nm+"\n"+cCtx.foes.map(f=>f.n).join(", "));
-    showWheel(combatItems, won?0:1, "Combat : "+cCtx.nm, it => it.val?"#2ecc71":"#e74c3c", res => { if (res.val) handleWin(); else handleLoss(); }, [pct, 100-pct]);
+    showWheel([{label:"Victoire ! ("+pct+"%)",val:true},{label:"Défaite... ("+(100-pct)+"%)",val:false}], Math.random()<chance?0:1, "Combat", it=>it.val?"#2ecc71":"#e74c3c", res=>{ if (res.val) handleWin(); else handleLoss(); }, [pct, 100-pct]);
   }
 
   function handleWin() {
-    const isRoute = cCtx?.ctx === "rt";
-    if (cCtx?.ctx === "gym") {
-      const gym = GYMS[cCtx.gi!];
-      setBadges(b => [...b, gym.bd]);
-      setMsg("🎉 Victoire ! Badge "+gym.bd+" obtenu !");
-      boostTeamBst();
-      setExtra("📈 BST de l'équipe augmenté !");
-    } else if (cCtx?.ctx === "spear") {
-      setMsg("🎉 Hélio vaincu !"); setCCtx(null); setPhase("sleg"); return;
-    } else { setMsg("🎉 Victoire contre "+cCtx?.nm+" !"); }
-    if (isRoute) {
-      const rewards = [{k:"p",label:"Potion"},{k:"p",label:"Potion"},{k:"sp",label:"Super Potion"},{k:"r",label:"Rappel"}];
-      const reward = rewards[Math.floor(Math.random()*rewards.length)];
-      setInv(v => { const nv = {...v}; nv[reward.k as keyof InvState]++; return nv; });
-      setExtra("🎁 "+reward.label+" obtenue !");
+    const isRt = cCtx?.ctx === "rt";
+    if (cCtx?.ctx === "gym") { const gym = GYMS[cCtx.gi!]; setBadges(b => [...b, gym.bd]); setMsg("🎉 Badge "+gym.bd+" obtenu !"); boostTeamBst(); setExtra("📈 BST augmenté !"); }
+    else if (cCtx?.ctx === "spear") { setMsg("🎉 Hélio vaincu !"); setCCtx(null); setPhase("sleg"); return; }
+    else { setMsg("🎉 Victoire !"); }
+    
+    if (isRt) {
+      const rw = [{k:"p",l:"Potion"},{k:"p",l:"Potion"},{k:"sp",l:"Super Potion"},{k:"r",l:"Rappel"}][Math.floor(Math.random()*4)];
+      setInv(v => { const nv = {...v}; nv[rw.k as keyof InvState]++; return nv; }); setExtra("🎁 "+rw.l+" obtenue !");
     }
     setCCtx(null);
-    const evolvable = team.filter(p => p.e);
-    if (!evolvable.length) { if (isRoute) finRoute(); else setPhase("msg"); return; }
-    const evoRate = badges.length <= 2 ? 0.40 : badges.length <= 5 ? 0.50 : 0.60;
-    const evoPct = Math.round(evoRate*100);
-    const willEvolve = Math.random() < evoRate;
-    showWheel([{label:"Évolution ! ("+evoPct+"%)",val:true},{label:"Pas d'évolution",val:false}], willEvolve?0:1, "🧬 Évolution ?",
-      it => it.val?"#f39c12":"#7f8c8d",
-      res => {
-        if (!res.val) { if (isRoute) finRoute(); else setPhase("msg"); return; }
-        const pickIdx = Math.floor(Math.random()*evolvable.length);
-        showWheel(evolvable.map(p => ({label:p.n,id:p.id,e:p.e,n:p.n,t:p.t,bstMod:p.bstMod})), pickIdx, "🧬 Qui évolue ?",
-          it => TC[it.t![0]]||"#888",
-          res2 => {
-            const evo = gp(res2.e as number);
-            if (evo) {
-              setTeam(t => t.map(p => p.id===res2.id ? {...evo, bstMod: p.bstMod||1} : p));
-              setMsg((res2.n||"")+" évolue en "+evo.n+" !");
-              setExtra("🌟 Évolution réussie !");
-            }
-            if (isRoute) finRoute(); else setPhase("msg");
-          }
-        );
-      },
-      [evoPct, 100-evoPct]
-    );
+    const evos = team.filter(p => p.e); if (!evos.length) { if (isRt) finRoute(); else setPhase("msg"); return; }
+    const evoR = badges.length <= 2 ? 0.40 : badges.length <= 5 ? 0.50 : 0.60; const pct = Math.round(evoR*100);
+    showWheel([{label:"Évolution ("+pct+"%)",val:true},{label:"Rien",val:false}], Math.random()<evoR?0:1, "🧬 Évolution ?", it=>it.val?"#f39c12":"#7f8c8d", res => {
+      if (!res.val) { if (isRt) finRoute(); else setPhase("msg"); return; }
+      showWheel(evos.map(p => ({label:p.n,id:p.id,e:p.e,n:p.n,t:p.t,bstMod:p.bstMod})), Math.floor(Math.random()*evos.length), "Qui évolue ?", it => TC[it.t![0]]||"#888", res2 => {
+        const evo = gp(res2.e as number); if (evo) { setTeam(t => t.map(p => p.id===res2.id ? {...evo, bstMod: p.bstMod||1} : p)); setMsg((res2.n||"")+" évolue en "+evo.n+" !"); setExtra("🌟 Succès !"); }
+        if (isRt) finRoute(); else setPhase("msg");
+      });
+    }, [pct, 100-pct]);
   }
 
   function handleLoss() {
     if (retriesLeft > 0) { setRetriesLeft(r => r-1); setMsg("💀 Encore une tentative !"); setPhase("retry"); }
-    else if (inv.sp > 0) { setInv(v => ({...v,sp:v.sp-1})); setRetriesLeft(1); setMsg("💀 Super Potion ! (2 tentatives)"); setPhase("retry"); }
+    else if (inv.sp > 0) { setInv(v => ({...v,sp:v.sp-1})); setRetriesLeft(1); setMsg("💀 Super Potion ! (2 essais)"); setPhase("retry"); }
     else if (inv.p > 0) { setInv(v => ({...v,p:v.p-1})); setMsg("💀 Potion utilisée !"); setPhase("retry"); }
     else if (inv.r > 0) {
-      setInv(v => ({...v,r:v.r-1})); setMsg("💀 Rappel ! L'équipe se relève !");
-      if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); setExtra("Badge "+gym.bd+" obtenu !"); }
-      const isRoute = cCtx?.ctx==="rt"; setCCtx(null);
-      if (isRoute) finRoute(); else setPhase("msg");
-    } else { setMsg("💀 Défaite contre "+cCtx?.nm+"..."); setPhase("go"); }
+      setInv(v => ({...v,r:v.r-1})); setMsg("💀 Rappel !");
+      if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); setExtra("Badge "+gym.bd+" !"); }
+      const isRt = cCtx?.ctx==="rt"; setCCtx(null); if (isRt) finRoute(); else setPhase("msg");
+    } else { setMsg("💀 Défaite..."); setPhase("go"); }
   }
 
-  function finRoute() { setRSpins(s => { if (s-1<=0) { setTimeout(nextStep,500); return 0; } setPhase("route"); return s-1; }); }
-
-  const ROPTS_E4: RouteOpt[] = [{label:"Combat de dresseur",w:25,a:"trainer"},{label:"Aller au shop",w:25,a:"shop"},{label:"Événement spécial",w:20,a:"special"},{label:"Rien, on avance",w:30,a:"nothing"}];
+  function finRoute() { setRSpins(s => { if (s-1<=0) { setTimeout(nextStep,400); return 0; } setPhase("route"); return s-1; }); }
 
   function doRoute() {
-    const opts = badges.length >= 8 ? ROPTS_E4 : ROPTS;
-    const wi = weightedIdx(opts);
-    showWheel(opts, wi, badges.length>=8?"🏛️ Route Victoire":"🎯 Que se passe-t-il ?",
-      it => ({catch:"#e74c3c",fish:"#3498db",trainer:"#e67e22",shop:"#2ecc71",special:"#9b59b6",nothing:"#7f8c8d",mystery:"#f1c40f"} as Record<string,string>)[it.a||""]||"#888",
-      res => doRouteAction(res.a||"")
-    );
-  }
-
-  function doRouteAction(a: string) {
-    if (a==="catch") {
-      const pool = sampleArr(CATCH_IDS,10).map(gp).filter(Boolean);
-      showWheel(pool, Math.floor(Math.random()*pool.length), "🎯 Capture !",
-        it => TC[it.t![0]]||"#888", res => capturePoke(res as Pokemon, res.n+" capturé !", finRoute));
-    } else if (a==="fish") {
-      const pool = sampleArr(FISH_IDS,8).map(gp).filter(Boolean);
-      showWheel(pool, Math.floor(Math.random()*pool.length), "🎣 Pêche !",
-        () => "#3498db", res => capturePoke(res as Pokemon, res.n+" pêché !", finRoute));
-    } else if (a==="trainer") {
-      const rt: FoePokemon[] = [];
-      for (let i=0;i<Math.floor(Math.random()*2)+1;i++) { const rp=gp(CATCH_IDS[Math.floor(Math.random()*CATCH_IDS.length)]); if(rp)rt.push({n:rp.n,t:rp.t}); }
-      if(!rt.length) rt.push({n:"Keunotor",t:["Normal"]});
-      setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Un dresseur te défie !"); setPhase("cpre");
-    } else if (a==="shop") {
-      const its = badges.length>=8 ? [{label:"Potion",k:"p"},{label:"Super Potion",k:"sp"},{label:"Rappel",k:"r"}] : [{label:"Potion",k:"p"},{label:"Super Potion",k:"sp"},{label:"Pokéball",k:"b"},{label:"Rappel",k:"r"}];
-      showWheel(its, Math.floor(Math.random()*its.length), "🛒 Shop !",
-        (_,i) => ["#e74c3c","#e67e22","#3498db","#f1c40f"][i], res => { setInv(v=>{const nv={...v}; nv[res.k as keyof InvState]++; return nv;}); setMsg(res.label+" obtenue !"); finRoute(); });
-    } else if (a==="special") {
-      const evts = badges.length>=8 ? [{label:"Objet rare",a:"it"},{label:"Dresseur secret",a:"sc"},{label:"Œuf mystérieux",a:"eg"}] : SPECIAL_EVENTS;
-      showWheel(evts, Math.floor(Math.random()*evts.length), "⭐ Événement !",
-        (_,i) => ["#f1c40f","#e91e63","#9b59b6","#00bcd4","#ff5722","#4caf50"][i], res => doSpecial(res.a||""));
-    } else if (a==="nothing") { setMsg("Rien de spécial..."); finRoute(); }
-    else if (a==="mystery") {
-      const rares = PD.filter(p => p[2].some(t => ["Dragon","Spectre","Acier"].includes(t)));
-      const pk = gp(rares[Math.floor(Math.random()*rares.length)][0]);
-      if (pk) { capturePoke(pk, "✨ "+pk.n+" capturé !", finRoute); return; }
-      finRoute();
-    }
-  }
-
-  function doSpecial(a: string) {
-    if (a==="fo") { const f=gp(Math.random()>0.5?408:410); if(f){capturePoke(f,"Fossile : "+f.n+" !",finRoute);return;} finRoute(); }
-    else if (a==="eg") { const b=gp(BABY_IDS[Math.floor(Math.random()*BABY_IDS.length)]); if(b){capturePoke(b,"Œuf : "+b.n+" !",finRoute);return;} finRoute(); }
-    else if (a==="lg") { const ml=LEGS.filter(l=>[483,484,487].indexOf(l[0])===-1); const l=ml[Math.floor(Math.random()*ml.length)]; const p=gp(l[0]); if(p&&Math.random()<0.35){capturePoke(p,"🌟 "+p.n+" !!",finRoute);return;} if(p)setMsg(p.n+" s'enfuit..."); finRoute(); }
-    else if (a==="it") { setInv(v=>({...v,sp:v.sp+2})); setMsg("2 Super Potions !"); finRoute(); }
-    else if (a==="tr") { if(team.length>0){const ri=Math.floor(Math.random()*team.length);const old=team[ri];const np=gp(CATCH_IDS[Math.floor(Math.random()*CATCH_IDS.length)]);if(np){setTeam(t=>{const c=[...t];c[ri]=makePoke(np);return c;});setMsg("Échange : "+old.n+" → "+np.n+" !");}} finRoute(); }
-    else if (a==="sc") { setCCtx({nm:"Dresseur mystérieux",foes:[{n:"Carchacrok",t:["Dragon","Sol"]},{n:"Lucario",t:["Combat","Acier"]}],d:0.05,ctx:"rt",spr:"acetrainer-gen4dp"}); setMsg("Dresseur mystérieux !"); setPhase("cpre"); }
+    const opts = badges.length >= 8 ? [{label:"Combat",w:25,a:"trainer"},{label:"Shop",w:25,a:"shop"},{label:"Événement",w:20,a:"special"},{label:"Rien",w:30,a:"nothing"}] : ROPTS;
+    showWheel(opts, weightedIdx(opts), badges.length>=8?"🏛️ Victoire":"🎯 Action ?", it => ({catch:"#e74c3c",fish:"#3498db",trainer:"#e67e22",shop:"#2ecc71",special:"#9b59b6",nothing:"#7f8c8d",mystery:"#f1c40f"} as Record<string,string>)[it.a||""]||"#888", res => {
+      const a=res.a;
+      if (a==="catch") { const pool = sampleArr(CATCH_IDS,10).map(gp).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎯 Capture !", it=>TC[it.t![0]]||"#888", res2=>capturePoke(res2 as Pokemon, res2.n+" capturé !", finRoute)); }
+      else if (a==="fish") { const pool = sampleArr(FISH_IDS,8).map(gp).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎣 Pêche !", ()=>"#3498db", res2=>capturePoke(res2 as Pokemon, res2.n+" pêché !", finRoute)); }
+      else if (a==="trainer") {
+        const rt: FoePokemon[] = []; for (let i=0;i<Math.floor(Math.random()*2)+1;i++) { const rp=gp(CATCH_IDS[Math.floor(Math.random()*CATCH_IDS.length)]); if(rp)rt.push({n:rp.n,t:rp.t}); }
+        if(!rt.length) rt.push({n:"Keunotor",t:["Normal"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Dresseur !"); setPhase("cpre");
+      }
+      else if (a==="shop") {
+        const its = badges.length>=8 ? [{l:"Potion",k:"p"},{l:"Super Potion",k:"sp"},{l:"Rappel",k:"r"}] : [{l:"Potion",k:"p"},{l:"Super Potion",k:"sp"},{l:"Pokéball",k:"b"},{l:"Rappel",k:"r"}];
+        showWheel(its, Math.floor(Math.random()*its.length), "🛒 Shop !", (_,i) => ["#e74c3c","#e67e22","#3498db","#f1c40f"][i], res2 => { setInv(v=>{const nv={...v}; nv[res2.k as keyof InvState]++; return nv;}); setMsg(res2.l+" obtenue !"); finRoute(); });
+      }
+      else if (a==="special") {
+        const evts = badges.length>=8 ? [{label:"Objet",a:"it"},{label:"Dresseur secret",a:"sc"},{label:"Œuf",a:"eg"}] : SPECIAL_EVENTS;
+        showWheel(evts, Math.floor(Math.random()*evts.length), "⭐ Événement !", (_,i) => ["#f1c40f","#e91e63","#9b59b6","#00bcd4","#ff5722","#4caf50"][i], res2 => {
+          const sa=res2.a;
+          if (sa==="fo") { const f=gp(Math.random()>0.5?408:410); if(f) capturePoke(f,"Fossile "+f.n+" !",finRoute); else finRoute(); }
+          else if (sa==="eg") { const b=gp(BABY_IDS[Math.floor(Math.random()*BABY_IDS.length)]); if(b) capturePoke(b,"Œuf "+b.n+" !",finRoute); else finRoute(); }
+          else if (sa==="lg") { const ml=LEGS.filter(l=>[483,484,487].indexOf(l[0])===-1); const l=ml[Math.floor(Math.random()*ml.length)]; const p=gp(l[0]); if(p&&Math.random()<0.35) capturePoke(p,"🌟 "+p.n+" !",finRoute); else { setMsg("S'enfuit..."); finRoute(); } }
+          else if (sa==="it") { setInv(v=>({...v,sp:v.sp+2})); setMsg("2 Super Potions !"); finRoute(); }
+          else if (sa==="tr") { if(team.length>0){const ri=Math.floor(Math.random()*team.length);const np=gp(CATCH_IDS[Math.floor(Math.random()*CATCH_IDS.length)]);if(np){setTeam(t=>{const c=[...t];c[ri]=makePoke(np);return c;});setMsg("Échange : "+np.n+" !");}} finRoute(); }
+          else if (sa==="sc") { setCCtx({nm:"Mystère",foes:[{n:"Carchacrok",t:["Dragon","Sol"]},{n:"Lucario",t:["Combat","Acier"]}],d:0.05,ctx:"rt",spr:"acetrainer-gen4dp"}); setMsg("Dresseur fort !"); setPhase("cpre"); }
+        });
+      }
+      else if (a==="mystery") { const rares = PD.filter(p => p[2].some(t => ["Dragon","Spectre","Acier"].includes(t))); const pk = gp(rares[Math.floor(Math.random()*rares.length)][0]); if (pk) capturePoke(pk, "✨ "+pk.n+" !", finRoute); else finRoute(); }
+      else { setMsg("Rien..."); finRoute(); }
+    });
   }
 
   function doLeg() {
     const legs = [gp(483),gp(484)].filter(Boolean);
-    showWheel(legs, Math.floor(Math.random()*legs.length), "🌟 Quel légendaire ?",
-      it => it.id===483?"#4a90d9":"#d94a8c",
-      res => {
-        setMsg(res.n+" apparaît ! (40%)");
-        const caught = Math.random()<0.4;
-        showWheel([{label:"Capturé ! (40%)",val:true},{label:"Enfui... (60%)",val:false}], caught?0:1, "Capture !",
-          it => it.val?"#f1c40f":"#e74c3c",
-          cres => { if(cres.val){capturePoke(res as Pokemon,"🌟🌟🌟 "+res.n+" capturé !!!",()=>setPhase("msg"));} else{setMsg(res.n+" s'enfuit...");setPhase("msg");} },
-          [40,60]);
-      });
+    showWheel(legs, Math.floor(Math.random()*legs.length), "🌟 Légendaire ?", it => it.id===483?"#4a90d9":"#d94a8c", res => {
+      setMsg(res.n+" apparaît ! (40%)");
+      showWheel([{label:"Capturé !",val:true},{label:"Enfui...",val:false}], Math.random()<0.4?0:1, "Capture", it=>it.val?"#f1c40f":"#e74c3c", c => {
+        if(c.val) capturePoke(res as Pokemon,"🌟 "+res.n+" capturé !",()=>setPhase("msg")); else {setMsg("Il s'enfuit...");setPhase("msg");}
+      }, [40,60]);
+    });
   }
 
   /* ═══════════════ RENDER ═══════════════ */
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(180deg,#0f0c29,#1a1a2e 50%,#16213e)",fontFamily:"'Trebuchet MS',sans-serif",color:"#f0e6d3",display:"flex",flexDirection:"column"}}>
-      {/* Header */}
-      <div style={{background:"rgba(0,0,0,0.5)",borderBottom:"3px solid #e74c3c",padding:mob?"8px 12px":"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",zIndex:10}}>
-        <div style={{display:"flex",alignItems:"center",gap:mob?6:10}}>
-          <span style={{fontSize:mob?20:26}}>⚡</span>
+    <div style={{height:"100dvh",background:"linear-gradient(180deg,#0f0c29,#1a1a2e 50%,#16213e)",fontFamily:"'Trebuchet MS',sans-serif",color:"#f0e6d3",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      
+      {/* HEADER COMPACT */}
+      <div style={{background:"rgba(0,0,0,0.6)",borderBottom:"2px solid #e74c3c",padding:"6px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:18}}>⚡</span>
           <div>
-            <div style={{fontSize:mob?14:18,fontWeight:900,letterSpacing:1}}>POKÉMON</div>
-            <div style={{fontSize:mob?8:10,color:"#e74c3c",fontWeight:700,letterSpacing:mob?2:4}}>RANDOMIZER</div>
+            <div style={{fontSize:14,fontWeight:900}}>POKÉMON</div>
+            <div style={{fontSize:8,color:"#e74c3c",fontWeight:700,letterSpacing:1}}>RANDOMIZER</div>
           </div>
         </div>
-        <div style={{position:"relative"}}>
-          <button onClick={() => setMenuOpen(!menuOpen)} style={{padding:"8px 12px",fontSize:20,cursor:"pointer",background:"transparent",color:"#f0e6d3",border:"1px solid rgba(255,255,255,.2)",borderRadius:8}}>☰</button>
-          {menuOpen && (
-            <div style={{position:"absolute",right:0,top:"100%",marginTop:4,background:"#1a1a2e",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:8,zIndex:20,minWidth:160,boxShadow:"0 8px 24px rgba(0,0,0,.5)"}}>
-              <button onClick={() => { reset(); setMenuOpen(false); }} style={{width:"100%",padding:"10px 16px",fontSize:14,fontWeight:700,cursor:"pointer",background:"#e74c3c",color:"#fff",border:"none",borderRadius:8}}>🔄 Reset la partie</button>
-            </div>
-          )}
-        </div>
+        <button onClick={() => setMenuOpen(!menuOpen)} style={{padding:"4px 8px",fontSize:16,cursor:"pointer",background:"transparent",color:"#fff",border:"1px solid rgba(255,255,255,.2)",borderRadius:6}}>☰</button>
+        {menuOpen && (
+          <div style={{position:"absolute",right:8,top:40,background:"#1a1a2e",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:8,zIndex:20}}>
+            <button onClick={() => { reset(); setMenuOpen(false); }} style={btnStyle("#e74c3c","#c0392b")}>🔄 Reset</button>
+          </div>
+        )}
       </div>
-      {menuOpen && <div onClick={() => setMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:9}} />}
 
-      {/* ═══ Main Game Area ═══ */}
-      <div style={{flex:1,display:"flex",flexDirection:mob?"column":"row",overflowY:"auto"}}>
+      <div style={{flex:1,display:"flex",flexDirection:mob?"column":"row",overflow:"hidden"}}>
         
-        {/* Left/Center: Wheel Area */}
-        <div style={{flex:1,padding:mob?10:20,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:mob?280:400}}>
-          {phase === "wheel" && wCfg && (
-            <Wheel key={wheelKey} items={wCfg.items} winIdx={wCfg.winIdx} onDone={wCfg.onDone} label={wCfg.label} colFn={wCfg.colFn} sizes={wCfg.sizes} sz={mob?240:320} />
-          )}
-
-          {/* Fallback Graphic when no wheel */}
-          {phase !== "wheel" && phase !== "swap" && phase !== "win" && (
-            <div style={{opacity:0.1,fontSize:mob?100:150,filter:"grayscale(100%)"}}>⚡</div>
-          )}
-
-          {phase === "swap" && swapData && (
-            <div style={{textAlign:"center",maxWidth:500,width:"100%"}}>
-              <div style={{fontSize:16,fontWeight:800,marginBottom:10}}>{"Remplacer par "+swapData.poke.n+" ?"}</div>
-              <div style={{display:"flex",gap:4,marginBottom:8,justifyContent:"center"}}>
-                {swapData.poke.t.map(tp => <span key={tp} style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:TC[tp],color:"#fff",fontWeight:600}}>{tp}</span>)}
-                <span style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:"rgba(255,255,255,.1)"}}>BST {BST[swapData.poke.id]||"?"}</span>
+        {/* SIDEBAR (Desktop) / TOPBAR COMPACTE (Mobile) */}
+        <div style={{
+          width: mob ? "100%" : 280, flexShrink: 0,
+          background: mob ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.4)",
+          borderRight: mob ? "none" : "2px solid rgba(255,255,255,0.05)",
+          borderBottom: mob ? "1px solid rgba(255,255,255,0.1)" : "none",
+          padding: mob ? "4px 8px" : "16px",
+          display:"flex", flexDirection: mob ? "column" : "column", gap: mob ? 4 : 16,
+          zIndex: 5
+        }}>
+          {mob ? (
+            // Mobile: 2 lignes ultra compactes
+            <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:4,flex:1}}>
+                  <span>🧢</span>
+                  <div style={{height:4,flex:1,maxWidth:60,background:"rgba(255,255,255,.1)",borderRadius:2}}><div style={{height:"100%",width:`${(step/STORY.length)*100}%`,background:"#e74c3c",borderRadius:2}}/></div>
+                </div>
+                <div style={{color:"#f1c40f",fontWeight:800}}>🏅 {badges.length}/8</div>
+                <div style={{display:"flex",gap:6,color:"#2ecc71",fontWeight:800}}>
+                  <span>🧪{inv.p}</span><span>💊{inv.sp}</span><span>⭕{inv.b}</span><span>💫{inv.r}</span>
+                </div>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:mob?"repeat(2,1fr)":"repeat(3,1fr)",gap:8,margin:"10px 0"}}>
-                {team.map((p,i) => (
-                  <button key={i} onClick={() => {
-                    const removed = team[i]; setTeam(t=>{const c=[...t];c[i]=swapData.poke;return c;});
-                    setExtra(swapData.poke.n+" remplace "+removed.n+" !");
-                    setMsg(swapData.afterMsg); const fn=swapData.afterFn; setSwapData(null); fn();
-                  }} style={{padding:"8px",background:"rgba(255,255,255,.07)",border:"2px solid rgba(255,255,255,.15)",borderRadius:10,cursor:"pointer",color:"#f0e6d3",textAlign:"center",borderLeft:"4px solid "+(TC[p.t[0]]||"#888")}}>
-                    <div style={{fontSize:13,fontWeight:700}}>{p.n}</div>
-                    <div style={{fontSize:9,color:"rgba(255,255,255,.4)",marginTop:2}}>BST {getEffBst(p)}</div>
-                  </button>
-                ))}
+              <div style={{display:"flex",gap:4,justifyContent:"center",height:28}}>
+                {[0,1,2,3,4,5].map(i => team[i] ? (
+                  <img key={i} src={sprUrl(team[i].id)} alt="" style={{width:28,height:28,background:"rgba(255,255,255,.1)",borderRadius:4,objectFit:"cover",borderBottom:`2px solid ${TC[team[i].t[0]]||"#fff"}`}} />
+                ) : <div key={i} style={{width:28,height:28,background:"rgba(255,255,255,.05)",borderRadius:4,border:"1px dashed rgba(255,255,255,.2)"}} />)}
               </div>
-              <button onClick={() => { setMsg(swapData.afterMsg); setExtra(swapData.poke.n+" refusé."); const fn=swapData.afterFn; setSwapData(null); fn(); }} style={btnStyle("#7f8c8d","#6c7a89")}>❌ Refuser</button>
-            </div>
-          )}
-
-          {phase === "win" && (
-            <div style={{background:"linear-gradient(135deg,rgba(241,196,15,.12),rgba(231,76,60,.12))",border:"2px solid #f1c40f",borderRadius:14,padding:mob?16:28,textAlign:"center",maxWidth:480,width:"100%"}}>
-              <div style={{fontSize:mob?36:48,marginBottom:8}}>🏆</div>
-              <div style={{fontSize:mob?18:24,fontWeight:900,color:"#f1c40f",marginBottom:8}}>MAÎTRE DE SINNOH !</div>
-              <div style={{fontSize:14,marginBottom:16}}>Cynthia vaincue avec {team.length} Pokémon et {badges.length} badges !</div>
-              <div style={{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:8,marginBottom:16}}>
-                {team.map((p,i) => (
-                  <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",background:"rgba(0,0,0,.3)",borderRadius:10,padding:6}}>
-                    <img src={sprUrl(p.id)} alt="" style={{width:48,height:48,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                    <div style={{fontSize:11,fontWeight:700,marginTop:2}}>{p.n}</div>
-                    <div style={{fontSize:9,color:"rgba(255,255,255,.4)"}}>BST {getEffBst(p)}</div>
-                  </div>
-                ))}
+            </>
+          ) : (
+            // Desktop Sidebar
+            <>
+              {/* Progress */}
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <div style={{fontSize:24}}>🧢</div>
+                <div style={{width:"100%",height:6,background:"rgba(255,255,255,.1)",borderRadius:3}}><div style={{height:"100%",width:`${(step/STORY.length)*100}%`,background:"#e74c3c",borderRadius:3}}/></div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>{step}/{STORY.length}</div>
               </div>
-              <button onClick={reset} style={btnStyle("#f1c40f","#e67e22")}>🔄 Nouvelle partie</button>
-            </div>
-          )}
-        </div>
-
-        {/* Right Area: Sprites & Team (Desktop only, or adapted for mobile) */}
-        <div style={{width:mob?"100%":340,padding:mob?"0 10px 10px":"20px",display:"flex",flexDirection:"column",gap:15,borderLeft:mob?"none":"2px solid rgba(255,255,255,0.05)",background:mob?"transparent":"rgba(0,0,0,0.2)"}}>
-          
-          {/* Sprites Dresseurs */}
-          <div style={{height:mob?100:150,background:"rgba(255,255,255,0.03)",borderRadius:10,display:"flex",justifyContent:"center",alignItems:"center",border:"1px solid rgba(255,255,255,0.1)"}}>
-            {(phase==="cpre"||phase==="wheel"||phase==="retry") && cCtx?.spr ? (
-              <div style={{display:"flex",alignItems:"flex-end",gap:mob?20:30}}>
-                <img src={trainerSpr("lucas")} alt="Jules" style={{width:mob?70:100,transform:"scaleX(-1)",imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                <img src={trainerSpr(cCtx.spr)} alt={cCtx.nm} style={{width:mob?70:100,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
+              {/* Badges */}
+              <div>
+                <div style={{fontSize:12,fontWeight:800,marginBottom:8,color:"#f1c40f",textAlign:"center"}}>🏅 Badges ({badges.length}/8)</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4}}>
+                  {GYMS.map((g,i) => <div key={i} style={{borderRadius:4,padding:"4px 0",textAlign:"center",fontSize:10,fontWeight:700,background:badges.includes(g.bd)?TC[g.tp]:"rgba(255,255,255,.05)",color:badges.includes(g.bd)?"#fff":"rgba(255,255,255,.2)"}}>{badges.includes(g.bd)?"⭐":"—"}</div>)}
+                </div>
               </div>
-            ) : (
-              <img src={trainerSpr("lucas")} alt="Jules" style={{width:mob?70:100,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-            )}
-          </div>
-
-          {/* Équipe en 2 colonnes */}
-          <div style={{background:"rgba(0,0,0,0.4)",borderRadius:10,padding:12}}>
-            <div style={{fontSize:14,fontWeight:800,marginBottom:10,color:"#3498db",textAlign:"center"}}>👥 Équipe ({team.length}/6)</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              {[0,1,2,3,4,5].map(i => {
-                const p = team[i];
-                if (!p) return <div key={"e"+i} style={{height:70,borderRadius:6,background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"rgba(255,255,255,.12)"}}>vide</div>;
-                return (
-                  <div key={p.id+"-"+i} style={{background:"rgba(255,255,255,.07)",borderRadius:6,padding:"6px",borderBottom:"3px solid "+(TC[p.t[0]]||"#888"),display:"flex",alignItems:"center",gap:6}}>
-                    <img src={sprUrl(p.id)} alt="" style={{width:40,height:40,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                    <div style={{overflow:"hidden"}}>
-                      <div style={{fontSize:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.n}</div>
-                      <div style={{fontSize:9,color:"rgba(255,255,255,.4)",marginTop:2}}>BST {getEffBst(p)}</div>
+              {/* Inv */}
+              <div>
+                <div style={{fontSize:12,fontWeight:800,marginBottom:8,color:"#2ecc71",textAlign:"center"}}>🎒 Inventaire</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                  {[{i:"🧪",v:inv.p,l:"Potions"},{i:"💊",v:inv.sp,l:"Super P."},{i:"⭕",v:inv.b,l:"Balls"},{i:"💫",v:inv.r,l:"Rappels"}].map((it,i) => (
+                    <div key={i} style={{background:"rgba(255,255,255,.06)",borderRadius:6,padding:"6px",textAlign:"center",display:"flex",flexDirection:"column",gap:2}}>
+                      <span style={{fontSize:14}}>{it.i} {it.v}</span><span style={{fontSize:9,opacity:0.6}}>{it.l}</span>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ Bottom Panel (Dialog, Actions, Progress) ═══ */}
-      <div style={{background:"#2a2a2a",borderTop:"4px solid #e74c3c",padding:mob?"12px":"20px",display:"flex",flexDirection:mob?"column":"row",gap:20,alignItems:"stretch"}}>
-        
-        {/* Status Area (Left on Desktop) */}
-        <div style={{display:"flex",flexDirection:mob?"row":"column",gap:mob?10:20,width:mob?"100%":220,flexShrink:0,justifyContent:mob?"space-around":"flex-start"}}>
-          {/* Progress */}
-          <div style={{display:"flex",flexDirection:mob?"row":"column",alignItems:"center",gap:mob?8:4,flex:mob?1:"none"}}>
-            <div style={{fontSize:mob?20:32}}>🧢</div>
-            <div style={{width:mob?"100%":100,height:6,background:"rgba(255,255,255,.1)",borderRadius:3,overflow:"hidden"}}>
-              <div style={{height:"100%",width:Math.round(step/STORY.length*100)+"%",background:"linear-gradient(90deg,#e74c3c,#f1c40f)",borderRadius:3,transition:"width .5s"}} />
-            </div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>{step}/{STORY.length}</div>
-          </div>
-
-          {/* Badges */}
-          <div style={{flex:mob?1:"none"}}>
-            <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#f1c40f",textAlign:"center"}}>🏅 Badges ({badges.length}/8)</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:2}}>
-              {GYMS.map((g,i) => {
-                const has = badges.includes(g.bd);
-                return <div key={i} title={g.nm} style={{borderRadius:4,padding:"3px 1px",textAlign:"center",fontSize:has?10:7,fontWeight:700,background:has?TC[g.tp]:"rgba(255,255,255,.04)",color:has?"#fff":"rgba(255,255,255,.2)",border:has?"1px solid #f1c40f":"1px solid rgba(255,255,255,.06)"}}>
-                  {has?"⭐":"—"}
-                </div>;
-              })}
-            </div>
-          </div>
-
-          {/* Inventory */}
-          <div style={{flex:mob?1:"none"}}>
-            <div style={{fontSize:12,fontWeight:800,marginBottom:5,color:"#2ecc71",textAlign:"center"}}>🎒 Inventaire</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
-              {[{icon:"🧪",val:inv.p},{icon:"💊",val:inv.sp},{icon:"⭕",val:inv.b},{icon:"💫",val:inv.r}].map((item,i) =>
-                <div key={i} style={{background:"rgba(255,255,255,.06)",borderRadius:5,padding:"4px",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-                  <span style={{fontSize:12}}>{item.icon}</span><span style={{fontSize:12,fontWeight:800}}>{item.val}</span>
+                  ))}
                 </div>
+              </div>
+              {/* Team */}
+              <div style={{flex:1,overflowY:"auto"}}>
+                <div style={{fontSize:12,fontWeight:800,marginBottom:8,color:"#3498db",textAlign:"center"}}>👥 Équipe ({team.length}/6)</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {[0,1,2,3,4,5].map(i => team[i] ? (
+                    <div key={i} style={{background:"rgba(255,255,255,.07)",borderRadius:6,padding:6,display:"flex",alignItems:"center",gap:8,borderLeft:`3px solid ${TC[team[i].t[0]]||"#fff"}`}}>
+                      <img src={sprUrl(team[i].id)} style={{width:36,height:36}} alt=""/>
+                      <div style={{overflow:"hidden"}}>
+                        <div style={{fontSize:12,fontWeight:700,whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{team[i].n}</div>
+                        <div style={{fontSize:10,opacity:0.5}}>BST {getEffBst(team[i])}</div>
+                      </div>
+                    </div>
+                  ) : <div key={i} style={{height:48,background:"rgba(255,255,255,.02)",borderRadius:6,border:"1px dashed rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,opacity:0.3}}>Vide</div>)}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ZONE PRINCIPALE (Jeu & Combat) */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
+          
+          {/* Haut: Visuels (Sprites ou Roue) - flex: 1 */}
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:mob?8:16,overflowY:"auto"}}>
+            
+            {/* Affichage des dresseurs s'il y a un combat (ou juste joueur) */}
+            {phase !== "wheel" && phase !== "swap" && phase !== "win" && (
+              <div style={{display:"flex",alignItems:"flex-end",gap:mob?20:60,justifyContent:"center",marginBottom:20}}>
+                <img src={trainerSpr("lucas")} style={{width:mob?70:120,transform:"scaleX(-1)",imageRendering:"pixelated"}} alt=""/>
+                {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{width:mob?70:120,imageRendering:"pixelated"}} alt=""/>}
+              </div>
+            )}
+
+            {/* La Roue (si phase === wheel) */}
+            {phase === "wheel" && wCfg && (
+              <Wheel ref={wheelRef} key={wheelKey} items={wCfg.items} winIdx={wCfg.winIdx} onDone={wCfg.onDone} label={wCfg.label} colFn={wCfg.colFn} sizes={wCfg.sizes} sz={mob?220:300} onStateChange={(s,d) => setWheelState({spinning:s, done:d})} />
+            )}
+
+            {/* Écran d'échange (Swap) adapté pour ne pas scroller */}
+            {phase === "swap" && swapData && (
+              <div style={{textAlign:"center",width:"100%",maxWidth:400}}>
+                <div style={{fontSize:14,fontWeight:800,marginBottom:6}}>Remplacer par {swapData.poke.n} ?</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:4,marginBottom:8}}>
+                  {team.map((p,i) => (
+                    <button key={i} onClick={() => {
+                      const removed = team[i]; setTeam(t=>{const c=[...t];c[i]=swapData.poke;return c;});
+                      setExtra(swapData.poke.n+" remplace "+removed.n+" !"); setMsg(swapData.afterMsg); setSwapData(null); swapData.afterFn();
+                    }} style={{padding:4,background:"rgba(255,255,255,.08)",border:`2px solid ${TC[p.t[0]]||"#888"}`,borderRadius:6,color:"#fff",cursor:"pointer"}}>
+                      <div style={{fontSize:11,fontWeight:700}}>{p.n}</div>
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => { setExtra(swapData.poke.n+" refusé."); setMsg(swapData.afterMsg); setSwapData(null); swapData.afterFn(); }} style={btnStyle("#7f8c8d","#6c7a89")}>❌ Refuser</button>
+              </div>
+            )}
+
+            {/* Écran de victoire */}
+            {phase === "win" && (
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:mob?40:60}}>🏆</div>
+                <div style={{fontSize:mob?18:24,fontWeight:900,color:"#f1c40f"}}>MAÎTRE DE SINNOH !</div>
+              </div>
+            )}
+          </div>
+
+          {/* Bas: Boîte de dialogue & Actions - Hauteur fixe et compacte */}
+          <div style={{padding:mob?"8px":"16px",background:"#2a2a2a",borderTop:"3px solid #e74c3c",display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
+            
+            {/* Dialog Box plus fine */}
+            <div style={pokeBoxStyle}>
+              <div style={{fontSize:mob?13:15,whiteSpace:"pre-line",lineHeight:1.4}}>{msg || "\u00A0"}</div>
+              {extra && <div style={{fontSize:11,color:"#27ae60",marginTop:4}}>{extra}</div>}
+            </div>
+
+            {/* Boutons d'actions */}
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end",flexWrap:"wrap"}}>
+              
+              {/* Bouton Tourner sortit de la roue, affiché si on est sur la roue et qu'elle ne tourne pas */}
+              {phase === "wheel" && !wheelState.spinning && !wheelState.done && (
+                 <button onClick={() => wheelRef.current?.spin()} style={btnStyle("#e74c3c","#c0392b")}>🎰 Tourner</button>
               )}
+              {phase === "wheel" && wheelState.done && wCfg && (
+                 <button onClick={() => wCfg.onDone(wCfg.items[wCfg.winIdx])} style={btnStyle("#3498db","#2980b9")}>▶️ Continuer</button>
+              )}
+
+              {phase === "msg" && <button onClick={nextStep} style={btnStyle("#3498db","#2980b9")}>▶️ Continuer</button>}
+              
+              {phase === "cpre" && cCtx && (
+                <>
+                  <div style={{marginRight:"auto",fontSize:12,padding:"6px 10px",background:"rgba(0,0,0,0.5)",borderRadius:6,display:"flex",alignItems:"center"}}>
+                    Victoire: <strong style={{color:"#f1c40f",marginLeft:4}}>{Math.round(calcWin(team,cCtx.foes,cCtx.d)*100)}%</strong>
+                  </div>
+                  <button onClick={doCombat} style={btnStyle("#e74c3c","#c0392b")}>⚔️ Combat</button>
+                </>
+              )}
+              
+              {phase === "retry" && <button onClick={doCombat} style={btnStyle("#e67e22","#d35400")}>🔄 Retenter</button>}
+              
+              {phase === "go" && (
+                <>
+                  <button onClick={() => {
+                    const isRt = cCtx?.ctx==="rt"; setCCtx(null); if(isRt) finRoute(); else setPhase("msg");
+                  }} style={btnStyle("#2ecc71","#27ae60")}>Continuer</button>
+                  <button onClick={reset} style={btnStyle("#e74c3c","#c0392b")}>Reset</button>
+                </>
+              )}
+              
+              {phase === "route" && (
+                <>
+                  <div style={{marginRight:"auto",fontSize:12,padding:"6px 10px",background:"rgba(0,0,0,0.5)",borderRadius:6,display:"flex",alignItems:"center"}}>
+                    Tours restants: <strong style={{marginLeft:4}}>{rSpins}</strong>
+                  </div>
+                  <button onClick={doRoute} style={btnStyle("#3498db","#2980b9")}>🎯 Action</button>
+                </>
+              )}
+              
+              {phase === "sleg" && <button onClick={doLeg} style={btnStyle("#f1c40f","#e67e22")}>🌟 Rencontrer</button>}
+              {phase === "win" && <button onClick={reset} style={btnStyle("#f1c40f","#e67e22")}>🔄 Nouvelle partie</button>}
             </div>
           </div>
         </div>
-
-        {/* Narrative & Action Area (Right on Desktop) */}
-        <div style={{flex:1,display:"flex",flexDirection:"column",gap:12}}>
-          {/* PokéBox de Dialogue */}
-          <div style={pokeBoxStyle}>
-            <div style={{fontSize:mob?14:16,lineHeight:1.6,whiteSpace:"pre-line"}}>
-              {msg || "\u00A0"}
-            </div>
-            {extra && <div style={{marginTop:8,color:"#27ae60",fontSize:13}}>{extra}</div>}
-          </div>
-
-          {/* Action Buttons Zone */}
-          <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"flex-end",minHeight:48,alignItems:"center"}}>
-            {phase === "msg" && <button onClick={nextStep} style={btnStyle("#3498db","#2980b9")}>▶️ Continuer</button>}
-            
-            {phase === "cpre" && cCtx && (
-              <>
-                <div style={{marginRight:"auto",fontSize:14,background:"rgba(0,0,0,.4)",padding:"8px 12px",borderRadius:8}}>
-                  Victoire estimée : <strong style={{color:"#f1c40f"}}>{Math.round(calcWin(team,cCtx.foes,cCtx.d)*100)}%</strong>
-                </div>
-                <button onClick={doCombat} style={btnStyle("#e74c3c","#c0392b")}>⚔️ Combattre !</button>
-              </>
-            )}
-            
-            {phase === "retry" && <button onClick={doCombat} style={btnStyle("#e67e22","#d35400")}>🔄 Retenter !</button>}
-            
-            {phase === "go" && (
-              <>
-                <button onClick={() => {
-                  if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); setMsg("Badge "+gym.bd+" obtenu !"); }
-                  else setMsg("Tu continues !");
-                  const evoR = badges.length<=2?0.40:badges.length<=5?0.50:0.60;
-                  const evolvable = team.filter(p=>p.e);
-                  if (evolvable.length>0 && Math.random()<evoR) { const pick=evolvable[Math.floor(Math.random()*evolvable.length)]; const evo=gp(pick.e!); if(evo){setTeam(t=>t.map(p=>p.id===pick.id?{...evo,bstMod:p.bstMod||1}:p));setExtra("🌟 "+pick.n+" évolue en "+evo.n+" !");} }
-                  const isRoute = cCtx?.ctx==="rt"; setCCtx(null);
-                  if(isRoute) finRoute(); else setPhase("msg");
-                }} style={btnStyle("#2ecc71","#27ae60")}>▶️ Continuer quand même</button>
-                {team.length>1 && <button onClick={() => {
-                  const ri=Math.floor(Math.random()*team.length); setExtra(team[ri].n+" perdu..."); setTeam(t=>t.filter((_,i)=>i!==ri)); setPhase("cpre");
-                }} style={btnStyle("#e67e22","#d35400")}>Continuer (-1 Pokémon)</button>}
-                <button onClick={reset} style={btnStyle("#e74c3c","#c0392b")}>Recommencer</button>
-              </>
-            )}
-            
-            {phase === "route" && (
-              <>
-                <div style={{marginRight:"auto",fontSize:14,background:"rgba(0,0,0,.4)",padding:"8px 12px",borderRadius:8}}>
-                  Tours restants : <strong>{rSpins}</strong>
-                </div>
-                <button onClick={doRoute} style={btnStyle("#3498db","#2980b9")}>🎯 Roue de route !</button>
-              </>
-            )}
-            
-            {phase === "sleg" && <button onClick={doLeg} style={btnStyle("#f1c40f","#e67e22")}>🌟 Capturer le légendaire !</button>}
-          </div>
-        </div>
-
       </div>
     </div>
   );
