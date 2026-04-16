@@ -612,7 +612,7 @@ export default function App() {
         <div style={{display:"flex",alignItems:"center",gap:mob?6:10}}>
           <span style={{fontSize:mob?20:26}}>⚡</span>
           <div>
-            <div style={{fontSize:mob?14:18,fontWeight:900,letterSpacing:1}}>POKÉMON SINNOH</div>
+            <div style={{fontSize:mob?14:18,fontWeight:900,letterSpacing:1}}>POKÉMON</div>
             <div style={{fontSize:mob?8:10,color:"#e74c3c",fontWeight:700,letterSpacing:mob?2:4}}>RANDOMIZER</div>
           </div>
         </div>
@@ -648,7 +648,6 @@ export default function App() {
               {(phase==="cpre"||phase==="wheel"||phase==="retry") && cCtx?.spr ? (
                 <div style={{display:"flex",alignItems:"flex-end",gap:mob?10:16,justifyContent:"center"}}>
                   <img src={trainerSpr("lucas")} alt="Toi" style={{width:mob?60:110,height:mob?60:110,imageRendering:"pixelated",transform:"scaleX(-1)"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                  <div style={{fontSize:mob?16:22,color:"#f1c40f"}}>⚔️</div>
                   <img src={trainerSpr(cCtx.spr)} alt={cCtx.nm} style={{width:mob?60:110,height:mob?60:110,imageRendering:"pixelated"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
                 </div>
               ) : !mob && (
