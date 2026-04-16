@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { GameData, Pokemon, FoePokemon, InvState, CombatCtx, SwapData, WheelItem } from "./types";
+import { GameData, Pokemon, FoePokemon, InvState, CombatCtx, SwapData, WheelItem, Theme } from "./types";
 import { Wheel, WheelRef } from "./components/Wheel";
 import { gen1Data } from "./data/gen1";
 import { gen2Data } from "./data/gen2";
@@ -8,15 +8,14 @@ import { gen4Data } from "./data/gen4";
 const FALLBACK_IMG = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
 const TC: Record<string, string> = { Normal: "#A8A878", Feu: "#F08030", Eau: "#6890F0", Plante: "#78C850", "Électrik": "#F8D030", Glace: "#98D8D8", Combat: "#C03028", Poison: "#A040A0", Sol: "#E0C068", Vol: "#A890F0", Psy: "#F85888", Insecte: "#A8B820", Roche: "#B8A038", Spectre: "#705898", Dragon: "#7038F8", "Ténèbres": "#705848", Acier: "#B8B8D0", "Fée": "#EE99AC" };
 
-// THÈMES DYNAMIQUES SELON LA GÉNÉRATION
-const THEMES: Record<string, any> = {
+const THEMES: Record<string, Theme> = {
   gen1: { bg: "#9bbc0f", panelBg: "#e0f8d0", border: "#0f380f", font: "'Courier New', Courier, monospace", btnBg: "#8bac0f", text: "#0f380f" },
   gen2: { bg: "#D4AF37", panelBg: "#FFFDD0", border: "#8A6327", font: "'Courier New', Courier, monospace", btnBg: "#B8860B", text: "#4A3511" },
   gen4: { bg: "#D6EAF8", panelBg: "#FFFFFF", border: "#2980B9", font: "Arial, Helvetica, sans-serif", btnBg: "#3498DB", text: "#2C3E50" }
 };
 
-function getPanelStyle(theme: any): React.CSSProperties { return { background: theme.panelBg, border: `4px solid ${theme.border}`, borderRadius: 8, boxShadow: `inset 0 0 0 2px rgba(255,255,255,0.5), 0 4px 0 rgba(0,0,0,0.15)`, color: theme.text, fontFamily: theme.font, fontWeight: "bold" }; }
-function btnStyle(theme: any, overrideBg?: string, shadow?: string): React.CSSProperties { return { padding: "10px 24px", fontSize: 15, fontFamily: theme.font, fontWeight: "bold", cursor: "pointer", background: overrideBg || theme.btnBg, color: "#fff", border: `2px solid ${theme.border}`, borderRadius: 6, boxShadow: `0 4px 0 ${shadow || theme.border}`, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", minWidth: 120, textTransform: "uppercase" }; }
+function getPanelStyle(theme: Theme): React.CSSProperties { return { background: theme.panelBg, border: `4px solid ${theme.border}`, borderRadius: 8, boxShadow: `inset 0 0 0 2px rgba(255,255,255,0.5), 0 4px 0 rgba(0,0,0,0.15)`, color: theme.text, fontFamily: theme.font, fontWeight: "bold" }; }
+function btnStyle(theme: Theme, overrideBg?: string, shadow?: string): React.CSSProperties { return { padding: "10px 24px", fontSize: 15, fontFamily: theme.font, fontWeight: "bold", cursor: "pointer", background: overrideBg || theme.btnBg, color: "#fff", border: `2px solid ${theme.border}`, borderRadius: 6, boxShadow: `0 4px 0 ${shadow || theme.border}`, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", minWidth: 120, textTransform: "uppercase" }; }
 
 function sampleArr(arr: number[], n: number): number[] { const s: Record<number, boolean> = {}; const r: number[] = []; while (r.length < Math.min(n, arr.length)) { const v = arr[Math.floor(Math.random() * arr.length)]; if (!s[v]) { s[v] = true; r.push(v); } } return r; }
 function trainerSpr(name: string) { return `https://play.pokemonshowdown.com/sprites/trainers/${name}.png`; }
@@ -52,8 +51,6 @@ export default function App() {
   }, []);
 
   const mob = ww < 850;
-
-  // DÉFINITION DU NOM DU JOUEUR SELON LA GÉNÉRATION
   const playerName = gen?.id === "gen1" ? "Red" : gen?.id === "gen2" ? "Gold" : "Lucas";
 
   function sprUrl(id: number) {
@@ -68,7 +65,6 @@ export default function App() {
     const ev = gen.STORY[step]; 
     if (!ev) return;
 
-    // Remplacement du mot clé par le vrai nom du personnage dans les textes de l'histoire
     const txt = ev.x ? ev.x.replace(/Jules/g, playerName) : "";
 
     if (ev.y === "m") { 
@@ -113,7 +109,6 @@ export default function App() {
       setPhase("route"); 
     }
     else if (ev.y === "S") { 
-      // Correction TS stricte : on utilise l'index "i" s'il est fourni, sinon on prend le dernier élément de EVIL_TEAM.
       const boss = ev.i !== undefined ? gen.EVIL_TEAM[ev.i] : gen.EVIL_TEAM[gen.EVIL_TEAM.length - 1]; 
       setMsg(`⛰️ ${boss.nm} !`); 
       setCCtx({ nm: boss.nm, foes: boss.tm, d: 0.15, ctx: "spear", spr: boss.spr }); 
@@ -190,7 +185,7 @@ export default function App() {
     
     if (cCtx?.ctx === "gym") { 
       const gym = gen!.GYMS[cCtx.gi!]; 
-      setBadges(b => [...b, gym.bd]); 
+      setBadges(b => b.includes(gym.bd) ? b : [...b, gym.bd]); 
       wMsg = "🎉 Badge " + gym.bd + " ! (BST +)"; 
       boostTeamBst(); 
     }
@@ -231,8 +226,9 @@ export default function App() {
     else if (inv.r > 0) { 
       setInv(v => ({ ...v, r: v.r - 1 })); 
       setMsg("💀 Rappel utilisé !\nFuite du combat."); 
-      if (cCtx?.ctx === "gym") { const gym = gen!.GYMS[cCtx.gi!]; setBadges(b => [...b, gym.bd]); boostTeamBst(); } 
-      const isRt = cCtx?.ctx === "rt"; setCCtx(null); if (isRt) finRoute(); else setPhase("msg"); 
+      const isRt = cCtx?.ctx === "rt"; 
+      setCCtx(null); 
+      if (isRt) finRoute(); else setPhase("msg"); 
     }
     else { setMsg("💀 Défaite totale..."); setPhase("go"); }
   }
@@ -265,6 +261,15 @@ export default function App() {
           else if (sa === "sc") { setCCtx({ nm: "Mystère", foes: [{ n: gen!.CHAMP.tm[0].n, t: gen!.CHAMP.tm[0].t }], d: 0.05, ctx: "rt", spr: "acetrainer-gen4dp" }); setMsg("Dresseur d'élite !"); setPhase("cpre"); }
         });
       }
+      else if (a === "mystery") {
+        const rares = gen!.PD.filter(p => p[2].some(t => ["Dragon", "Spectre", "Acier"].includes(t)));
+        if (rares.length > 0) {
+          const pk = gen!.PM[rares[Math.floor(Math.random() * rares.length)][0]];
+          if (pk) capturePoke(pk, "✨ " + pk.n + " capturé !", finRoute); else finRoute();
+        } else {
+          setMsg("Rien dans l'ombre..."); finRoute();
+        }
+      }
       else { setMsg("Rien à signaler..."); finRoute(); }
     });
   }
@@ -280,7 +285,6 @@ export default function App() {
     });
   }
 
-  // ECRAN D'ACCUEIL : SÉLECTION DES CARTOUCHES
   if (!gen) {
     return (
       <div style={{ height: "100dvh", background: "#2C3E50", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Courier New', monospace", color: "#FFF", padding: 20 }}>
@@ -322,13 +326,11 @@ export default function App() {
     );
   }
 
-  // THEME ACTIF
   const th = THEMES[gen.id] || THEMES.gen4;
 
   return (
     <div style={{ height: "100dvh", backgroundColor: th.bg, fontFamily: th.font, color: th.text, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
 
-      {/* HEADER */}
       <div style={{ background: `linear-gradient(180deg, ${th.btnBg} 0%, ${th.border} 100%)`, borderBottom: `4px solid ${th.border}`, padding: "8px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, zIndex: 10, color: "#fff", boxShadow: "0 4px 10px rgba(0,0,0,0.3)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 22 }}>⚡</span><div><div style={{ fontSize: 18, fontWeight: 900 }}>POKÉMON</div><div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#FFF" }}>{gen.name}</div></div></div>
         <button onClick={() => setMenuOpen(!menuOpen)} style={{ padding: "4px 8px", fontSize: 18, cursor: "pointer", background: "rgba(0,0,0,0.2)", color: "#fff", border: `2px solid ${th.border}`, borderRadius: 6, fontWeight: "bold" }}>☰</button>
@@ -336,7 +338,6 @@ export default function App() {
       </div>
       {menuOpen && <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />}
 
-      {/* PANNEAUX */}
       <div style={{ flex: 1, display: "flex", flexDirection: mob ? "column" : "row", overflow: "hidden", padding: mob ? 4 : 12, gap: mob ? 4 : 12 }}>
         <div style={{ ...getPanelStyle(th), width: mob ? "100%" : 240, flexShrink: 0, padding: mob ? "6px 10px" : "16px", display: "flex", flexDirection: "column", gap: mob ? 6 : 20, zIndex: 5, overflowY: mob ? "visible" : "auto" }}>
           {mob ? (
@@ -395,10 +396,9 @@ export default function App() {
         )}
       </div>
 
-      {/* BOUTONS ACTIONS */}
       <div style={{ padding: mob ? "8px 8px calc(8px + env(safe-area-inset-bottom))" : "16px", background: th.panelBg, borderTop: `4px solid ${th.border}`, display: "flex", flexDirection: "column", gap: 10, flexShrink: 0, zIndex: 10 }}>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", minHeight: 42, alignItems: "center" }}>
-
+          
           {phase === "wheel" && (
             <button onClick={() => { if (!wheelState.spinning && !wheelState.done) wheelRef.current?.spin(); else if (wheelState.done && wCfg) { setMsg(msg); wCfg.onDone(wCfg.items[wCfg.winIdx]); } }} disabled={wheelState.spinning} style={{ ...btnStyle(th, wheelState.done ? undefined : "#E3350D"), opacity: wheelState.spinning ? 0.6 : 1 }}>
               {wheelState.spinning ? "🎰 Rotation..." : wheelState.done ? "▶️ Continuer" : "🎰 Tourner la roue"}
@@ -414,7 +414,6 @@ export default function App() {
           {phase === "win" && <button onClick={reset} style={btnStyle(th, "#F1C40F")}>🔄 Rejouer</button>}
         </div>
 
-        {/* DIALOGUE */}
         <div style={{ background: "rgba(255,255,255,0.8)", border: `4px solid ${th.border}`, borderRadius: 8, padding: "12px 16px", minHeight: mob ? 64 : 80, display: "flex", alignItems: "center", boxShadow: `inset 0 0 0 3px ${th.btnBg}` }}>
           <div style={{ fontSize: mob ? 14 : 16, whiteSpace: "pre-line", lineHeight: 1.5, width: "100%", fontWeight: "bold", color: th.text }}>{msg || "\u00A0"}</div>
         </div>
