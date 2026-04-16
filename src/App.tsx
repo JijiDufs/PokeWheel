@@ -190,7 +190,7 @@ const E4 = [
   { nm:"Adrien",tp:"Feu",spr:"flint",tm:[{n:"Simiabraz",t:["Feu","Combat"]},{n:"Galopa",t:["Feu"]},{n:"Maganon",t:["Feu"]}] },
   { nm:"Lucio",tp:"Psy",spr:"lucian",tm:[{n:"Alakazam",t:["Psy"]},{n:"Gardevoir",t:["Psy","Fée"]},{n:"Gallame",t:["Psy","Combat"]}] }
 ];
-const CYN = { nm:"Cynthia",spr:"cynthia-gen4",tm:[{n:"Spiritomb",t:["Spectre","Ténèbres"]},{n:"Roserade",t:["Plante","Poison"]},{n:"Togekiss",t:["Fée","Vol"]},{n:"Lucario",t:["Combat","Acier"]},{n:"Milobellus",t:["Eau"]},{n:"Carchacrok",t:["Dragon","Sol"]}] };
+const CYN = { nm:"Cynthia",spr:"cynthia",tm:[{n:"Spiritomb",t:["Spectre","Ténèbres"]},{n:"Roserade",t:["Plante","Poison"]},{n:"Togekiss",t:["Fée","Vol"]},{n:"Lucario",t:["Combat","Acier"]},{n:"Milobellus",t:["Eau"]},{n:"Carchacrok",t:["Dragon","Sol"]}] };
 
 function rivTm(sid: number | null, st: number): FoePokemon[] {
   const rid = ({387:393,390:387,393:390} as Record<number,number>)[sid ?? 393] || 393;
@@ -205,7 +205,7 @@ const STORY: StoryEvent[] = [
   {y:"m",x:"Jules, tu te réveilles à Bonaugure.\nTon rival Barry t'attend !"},
   {y:"m",x:"Des Pokémon sauvages attaquent !\nChoisis dans la mallette..."},
   {y:"s"},{y:"r",s:0},
-  {y:"m",x:"Le Professeur Sorbier te confie le Pokédex. L'aventure commence !"},
+  {y:"m",x:"Le Professeur Sorbier te confie le Pokédex.\nL'aventure commence !"},
   {y:"R",p:1,x:"Route 202 — Vers Charbourg !"},{y:"g",i:0},
   {y:"m",x:"Badge Charbon obtenu !\nLa Team Galaxie rôde..."},
   {y:"R",p:1,x:"Route 205 — Vers Vestigion !"},{y:"g",i:1},{y:"r",s:1},
@@ -227,7 +227,7 @@ const STORY: StoryEvent[] = [
   {y:"C"},{y:"W"}
 ];
 
-/* ═══════════════ COLORS ═══════════════ */
+/* ═══════════════ COLORS & ASSETS ═══════════════ */
 const TC: Record<string,string> = {Normal:"#A8A878",Feu:"#F08030",Eau:"#6890F0",Plante:"#78C850","Électrik":"#F8D030",Glace:"#98D8D8",Combat:"#C03028",Poison:"#A040A0",Sol:"#E0C068",Vol:"#A890F0",Psy:"#F85888",Insecte:"#A8B820",Roche:"#B8A038",Spectre:"#705898",Dragon:"#7038F8","Ténèbres":"#705848",Acier:"#B8B8D0","Fée":"#EE99AC"};
 const WCOLS = ["#e74c3c","#e67e22","#f1c40f","#27ae60","#1abc9c","#3498db","#9b59b6","#e91e63","#00bcd4","#8bc34a","#ff9800","#607d8b"];
 const FALLBACK_IMG = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
@@ -255,33 +255,34 @@ const Wheel = forwardRef<WheelRef, WheelProps>(({ items, winIdx, onDone, label, 
   const draw = useCallback((angle: number) => {
     const c = canvasRef.current; if (!c) return;
     const ctx = c.getContext("2d"); if (!ctx) return;
-    const W = c.width, H = c.height, cx = W/2, cy = H/2, R = Math.min(cx,cy) - 14;
+    const W = c.width, H = c.height, cx = W/2, cy = H/2, R = Math.min(cx,cy) - 10;
     ctx.clearRect(0,0,W,H);
     const n = items.length; const arcs = getArcs();
     for (let i = 0; i < n; i++) {
       const a0 = angle + arcs[i].start, a1 = a0 + arcs[i].size;
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,a0,a1); ctx.closePath();
       ctx.fillStyle = colFn ? colFn(items[i],i) : WCOLS[i % WCOLS.length]; ctx.fill();
-      ctx.strokeStyle = "#0f0c29"; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.stroke();
       ctx.save(); ctx.translate(cx,cy); ctx.rotate(a0 + arcs[i].size/2);
       ctx.fillStyle = "#fff";
+      ctx.shadowColor = "#000"; ctx.shadowBlur = 4;
       const fs = Math.max(12, Math.min(18, Math.floor(320/n)));
-      ctx.font = `bold ${fs}px 'Trebuchet MS', sans-serif`; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.font = `bold ${fs}px 'Courier New', Courier, monospace`; ctx.textAlign = "right"; ctx.textBaseline = "middle";
       const lb = items[i].n || items[i].label || ""; const ml = n > 12 ? 12 : 20;
       ctx.fillText(lb.length > ml ? lb.slice(0,ml-1)+"…" : lb, R-18, 0); ctx.restore();
     }
+    // Flèche et centre style Pokéball
     ctx.beginPath(); ctx.moveTo(cx+R+10,cy); ctx.lineTo(cx+R-14,cy-16); ctx.lineTo(cx+R-14,cy+16); ctx.closePath();
-    ctx.fillStyle="#f1c40f"; ctx.fill(); ctx.strokeStyle="#0f0c29"; ctx.lineWidth=2; ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx,cy,20,0,2*Math.PI); ctx.fillStyle="#1a1a2e"; ctx.fill(); ctx.strokeStyle="#f1c40f"; ctx.lineWidth=3; ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx,cy,8,0,2*Math.PI); ctx.fillStyle="#f1c40f"; ctx.fill();
+    ctx.fillStyle="#f8f8f8"; ctx.fill(); ctx.strokeStyle="#333"; ctx.lineWidth=3; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,18,0,2*Math.PI); ctx.fillStyle="#f8f8f8"; ctx.fill(); ctx.strokeStyle="#333"; ctx.lineWidth=4; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,8,0,2*Math.PI); ctx.fillStyle="#e53935"; ctx.fill();
   }, [items, colFn, sizes, sz]);
 
   useEffect(() => { draw(angRef.current); }, [draw]);
 
   const spin = () => {
     if (spinning || done) return;
-    setSpinning(true);
-    onStateChange?.(true, false);
+    setSpinning(true); onStateChange?.(true, false);
     const arcs = getArcs(); const seg = arcs[winIdx];
     const margin = seg.size * 0.15; const randomOffset = margin + Math.random() * (seg.size - 2 * margin);
     const targetAngle = seg.start + randomOffset;
@@ -298,37 +299,29 @@ const Wheel = forwardRef<WheelRef, WheelProps>(({ items, winIdx, onDone, label, 
   };
 
   useImperativeHandle(ref, () => ({ spin }));
-
   useEffect(() => { return () => { if (animRef.current) cancelAnimationFrame(animRef.current); }; }, []);
 
   return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12,width:"100%", flex:1, justifyContent:"center"}}>
-      {label && <div style={{fontSize:16,fontWeight:800,color:"#f0e6d3",textAlign:"center",background:"rgba(0,0,0,0.4)",padding:"4px 12px",borderRadius:20}}>{label}</div>}
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,width:"100%", height:"100%", maxHeight:"100%", justifyContent:"center"}}>
+      {label && <div style={{fontSize:16,fontWeight:800,color:"#333",textAlign:"center",background:"#fff",border:"2px solid #333",padding:"4px 14px",borderRadius:12}}>{label}</div>}
       <canvas 
         ref={canvasRef} width={sz} height={sz} onClick={spin} 
-        style={{width:"100%", maxWidth:`${sz}px`, height:"auto", aspectRatio:"1/1", objectFit:"contain", cursor: (!spinning && !done) ? "pointer" : "default"}} 
+        style={{maxWidth:"100%", maxHeight:"100%", objectFit:"contain", cursor: (!spinning && !done) ? "pointer" : "default"}} 
       />
-      {done && (
-        <div style={{background:"rgba(46,204,113,.15)",border:"2px solid #2ecc71",borderRadius:10,padding:"8px 20px",fontSize:18,fontWeight:800,color:"#2ecc71",marginTop:4}}>
-          {"✨ " + (items[winIdx].n || items[winIdx].label || "")}
-        </div>
-      )}
     </div>
   );
 });
 
 /* ═══════════════ STYLES & UI ═══════════════ */
-function btnStyle(c1: string, c2: string): React.CSSProperties {
-  return {padding:"12px 20px",fontSize:15,fontWeight:700,cursor:"pointer",background:`linear-gradient(135deg,${c1},${c2})`,color:"#fff",border:"none",borderRadius:8,boxShadow:"0 2px 8px rgba(0,0,0,.3)",letterSpacing:0.5,whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", minWidth: 120};
-}
-
-const pokeBoxStyle: React.CSSProperties = {
-  background: "#f8f8f8", border: "3px solid #4a4a4a", borderRadius: 8,
-  boxShadow: "inset 0 0 0 2px #e0e0e0, 0 4px 8px rgba(0,0,0,0.4)",
-  color: "#222", fontFamily: "'Courier New', Courier, monospace", fontWeight: 800,
-  padding: "10px 14px", minHeight: 60, display: "flex", flexDirection: "column",
-  justifyContent: "center", width: "100%", overflow: "hidden", flexShrink: 0
+const panelStyle: React.CSSProperties = {
+  background: "#f8f8f8", border: "4px solid #505050", borderRadius: 8,
+  boxShadow: "inset 0 0 0 2px #e0e0e0, 0 4px 6px rgba(0,0,0,0.1)",
+  color: "#333", fontFamily: "'Courier New', Courier, monospace", fontWeight: "bold"
 };
+
+function btnStyle(c1: string, c2: string): React.CSSProperties {
+  return {padding:"10px 24px",fontSize:15,fontFamily:"'Courier New', Courier, monospace",fontWeight:"bold",cursor:"pointer",background:`linear-gradient(180deg,${c1},${c2})`,color:"#fff",border:"2px solid #333",borderRadius:6,boxShadow:"0 2px 0 rgba(0,0,0,.2)",whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", minWidth: 120};
+}
 
 /* ═══════════════ HELPERS ═══════════════ */
 function sampleArr(arr: number[], n: number): number[] {
@@ -337,7 +330,8 @@ function sampleArr(arr: number[], n: number): number[] {
   return r;
 }
 function sprUrl(id: number) { return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`; }
-function trainerSpr(name: string) { return `https://cdn.jsdelivr.net/gh/smogon/sprites@master/sprites/trainers/${name}.png`; }
+// Nouvelle source pour les dresseurs (Pokémon Showdown a une db robuste pour la Gen 4)
+function trainerSpr(name: string) { return `https://play.pokemonshowdown.com/sprites/trainers/${name}.png`; }
 function weightedIdx(items: {w:number}[]) {
   let tw = 0; for (let i=0;i<items.length;i++) tw += items[i].w||1;
   let r = Math.random()*tw;
@@ -368,7 +362,6 @@ export default function App() {
   const [msg, setMsg] = useState("");
   const [rSpins, setRSpins] = useState(0);
   const [cCtx, setCCtx] = useState<CombatCtx|null>(null);
-  const [extra, setExtra] = useState("");
   const [wheelKey, setWheelKey] = useState(0);
   const [swapData, setSwapData] = useState<SwapData|null>(null);
   const [retriesLeft, setRetriesLeft] = useState(0);
@@ -380,25 +373,25 @@ export default function App() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  const mob = ww < 768;
+  const mob = ww < 850;
 
   function reset() {
     setTeam([]); setBadges([]); setInv({p:1,sp:0,b:0,r:0}); setSid(null); setStep(0); setPhase("proc");
     setWCfg(null); setWheelState({ spinning: false, done: false }); setMsg(""); setRSpins(0);
-    setCCtx(null); setExtra(""); setWheelKey(0); setSwapData(null); setRetriesLeft(0); setMenuOpen(false);
+    setCCtx(null); setWheelKey(0); setSwapData(null); setRetriesLeft(0); setMenuOpen(false);
   }
   function makePoke(pk: Pokemon): Pokemon { return { id:pk.id, n:pk.n, t:pk.t, e:pk.e, bstMod: pk.bstMod || 1 }; }
-  function addPoke(pk: Pokemon) { setTeam(prev => [...prev, makePoke(pk)]); setExtra(pk.n + " rejoint ton équipe !"); }
+  function addPoke(pk: Pokemon) { setTeam(prev => [...prev, makePoke(pk)]); }
   function capturePoke(pk: Pokemon, afterMsg: string, afterFn: () => void) {
     if (team.length < 6) { addPoke(pk); setMsg(afterMsg); afterFn(); }
-    else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg("L'équipe est pleine !"); setPhase("swap"); }
+    else { setSwapData({ poke: makePoke(pk), afterMsg, afterFn }); setMsg(pk.n + " veut te rejoindre !\nL'équipe est pleine."); setPhase("swap"); }
   }
   function boostTeamBst() { setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * 1.03 }))); }
-  function nextStep() { setStep(s => s+1); setPhase("proc"); setExtra(""); }
+  function nextStep() { setStep(s => s+1); setPhase("proc"); }
+  
   function showWheel(items: WheelItem[], winIdx: number, label: string, colFn: (item:WheelItem,i:number)=>string, onDone: (item:WheelItem)=>void, sizes?: number[]|null) {
     setWCfg({items, winIdx, label, colFn, onDone, sizes: sizes||null});
-    setWheelState({ spinning: false, done: false });
-    setWheelKey(k => k+1); setPhase("wheel");
+    setWheelState({ spinning: false, done: false }); setWheelKey(k => k+1); setPhase("wheel");
   }
 
   // Process step
@@ -421,32 +414,32 @@ export default function App() {
     else if (ev.y === "S") { setMsg("⛰️ Pilier Lance !"); setCCtx({nm:"Hélio",foes:GAL[3].tm,d:0.10,ctx:"spear",spr:"cyrus"}); setPhase("cpre"); }
     else if (ev.y === "4") { const e = E4[ev.i!]; setMsg("🏛️ "+e.nm); setCCtx({nm:e.nm,foes:e.tm,d:0.10,ctx:"e4",spr:e.spr}); setPhase("cpre"); }
     else if (ev.y === "C") { setMsg("👑 Cynthia !"); setCCtx({nm:"Cynthia",foes:CYN.tm,d:0.15,ctx:"champ",spr:CYN.spr}); setPhase("cpre"); }
-    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS ! Tu es le Maître ! 🏆"); setPhase("win"); }
+    else if (ev.y === "W") { setMsg("🏆 FÉLICITATIONS !\nTu es le nouveau Maître ! 🏆"); setPhase("win"); }
   }, [phase, step]);
 
   function doCombat() {
     if (!cCtx) return; const chance = calcWin(team, cCtx.foes, cCtx.d); const pct = Math.round(chance*100);
-    setMsg("⚔️ "+cCtx.nm+"\n"+cCtx.foes.map(f=>f.n).join(", "));
+    setMsg("⚔️ Combat contre "+cCtx.nm+" !\n"+cCtx.foes.map(f=>f.n).join(", "));
     showWheel([{label:"Victoire ! ("+pct+"%)",val:true},{label:"Défaite... ("+(100-pct)+"%)",val:false}], Math.random()<chance?0:1, "Combat", it=>it.val?"#2ecc71":"#e74c3c", res=>{ if (res.val) handleWin(); else handleLoss(); }, [pct, 100-pct]);
   }
 
   function handleWin() {
     const isRt = cCtx?.ctx === "rt";
-    if (cCtx?.ctx === "gym") { const gym = GYMS[cCtx.gi!]; setBadges(b => [...b, gym.bd]); setMsg("🎉 Badge "+gym.bd+" obtenu !"); boostTeamBst(); setExtra("📈 BST augmenté !"); }
+    let wMsg = "🎉 Victoire !";
+    if (cCtx?.ctx === "gym") { const gym = GYMS[cCtx.gi!]; setBadges(b => [...b, gym.bd]); wMsg = "🎉 Badge "+gym.bd+" obtenu ! (BST +)"; boostTeamBst(); }
     else if (cCtx?.ctx === "spear") { setMsg("🎉 Hélio vaincu !"); setCCtx(null); setPhase("sleg"); return; }
-    else { setMsg("🎉 Victoire !"); }
     
     if (isRt) {
       const rw = [{k:"p",l:"Potion"},{k:"p",l:"Potion"},{k:"sp",l:"Super Potion"},{k:"r",l:"Rappel"}][Math.floor(Math.random()*4)];
-      setInv(v => { const nv = {...v}; nv[rw.k as keyof InvState]++; return nv; }); setExtra("🎁 "+rw.l+" obtenue !");
+      setInv(v => { const nv = {...v}; nv[rw.k as keyof InvState]++; return nv; }); wMsg += "\n🎁 "+rw.l+" obtenue !";
     }
     setCCtx(null);
-    const evos = team.filter(p => p.e); if (!evos.length) { if (isRt) finRoute(); else setPhase("msg"); return; }
+    const evos = team.filter(p => p.e); if (!evos.length) { setMsg(wMsg); if (isRt) finRoute(); else setPhase("msg"); return; }
     const evoR = badges.length <= 2 ? 0.40 : badges.length <= 5 ? 0.50 : 0.60; const pct = Math.round(evoR*100);
     showWheel([{label:"Évolution ("+pct+"%)",val:true},{label:"Rien",val:false}], Math.random()<evoR?0:1, "🧬 Évolution ?", it=>it.val?"#f39c12":"#7f8c8d", res => {
-      if (!res.val) { if (isRt) finRoute(); else setPhase("msg"); return; }
+      if (!res.val) { setMsg(wMsg); if (isRt) finRoute(); else setPhase("msg"); return; }
       showWheel(evos.map(p => ({label:p.n,id:p.id,e:p.e,n:p.n,t:p.t,bstMod:p.bstMod})), Math.floor(Math.random()*evos.length), "Qui évolue ?", it => TC[it.t![0]]||"#888", res2 => {
-        const evo = gp(res2.e as number); if (evo) { setTeam(t => t.map(p => p.id===res2.id ? {...evo, bstMod: p.bstMod||1} : p)); setMsg((res2.n||"")+" évolue en "+evo.n+" !"); setExtra("🌟 Succès !"); }
+        const evo = gp(res2.e as number); if (evo) { setTeam(t => t.map(p => p.id===res2.id ? {...evo, bstMod: p.bstMod||1} : p)); setMsg(wMsg+"\n🌟 "+(res2.n||"")+" évolue en "+evo.n+" !"); }
         if (isRt) finRoute(); else setPhase("msg");
       });
     }, [pct, 100-pct]);
@@ -454,13 +447,13 @@ export default function App() {
 
   function handleLoss() {
     if (retriesLeft > 0) { setRetriesLeft(r => r-1); setMsg("💀 Encore une tentative !"); setPhase("retry"); }
-    else if (inv.sp > 0) { setInv(v => ({...v,sp:v.sp-1})); setRetriesLeft(1); setMsg("💀 Super Potion ! (2 essais)"); setPhase("retry"); }
+    else if (inv.sp > 0) { setInv(v => ({...v,sp:v.sp-1})); setRetriesLeft(1); setMsg("💀 Super Potion utilisée ! (2 essais)"); setPhase("retry"); }
     else if (inv.p > 0) { setInv(v => ({...v,p:v.p-1})); setMsg("💀 Potion utilisée !"); setPhase("retry"); }
     else if (inv.r > 0) {
-      setInv(v => ({...v,r:v.r-1})); setMsg("💀 Rappel !");
-      if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); setExtra("Badge "+gym.bd+" !"); }
+      setInv(v => ({...v,r:v.r-1})); setMsg("💀 Rappel utilisé !\nTu fuis le combat.");
+      if (cCtx?.ctx==="gym") { const gym=GYMS[cCtx.gi!]; setBadges(b=>[...b,gym.bd]); boostTeamBst(); }
       const isRt = cCtx?.ctx==="rt"; setCCtx(null); if (isRt) finRoute(); else setPhase("msg");
-    } else { setMsg("💀 Défaite..."); setPhase("go"); }
+    } else { setMsg("💀 Défaite totale..."); setPhase("go"); }
   }
 
   function finRoute() { setRSpins(s => { if (s-1<=0) { setTimeout(nextStep,400); return 0; } setPhase("route"); return s-1; }); }
@@ -469,37 +462,38 @@ export default function App() {
     const opts = badges.length >= 8 ? [{label:"Combat",w:25,a:"trainer"},{label:"Shop",w:25,a:"shop"},{label:"Événement",w:20,a:"special"},{label:"Rien",w:30,a:"nothing"}] : ROPTS;
     showWheel(opts, weightedIdx(opts), badges.length>=8?"🏛️ Victoire":"🎯 Action ?", it => ({catch:"#e74c3c",fish:"#3498db",trainer:"#e67e22",shop:"#2ecc71",special:"#9b59b6",nothing:"#7f8c8d",mystery:"#f1c40f"} as Record<string,string>)[it.a||""]||"#888", res => {
       const a=res.a;
-      if (a==="catch") { const pool = sampleArr(CATCH_IDS,10).map(gp).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎯 Capture !", it=>TC[it.t![0]]||"#888", res2=>capturePoke(res2 as Pokemon, res2.n+" capturé !", finRoute)); }
-      else if (a==="fish") { const pool = sampleArr(FISH_IDS,8).map(gp).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎣 Pêche !", ()=>"#3498db", res2=>capturePoke(res2 as Pokemon, res2.n+" pêché !", finRoute)); }
+      if (a==="catch") { const pool = sampleArr(CATCH_IDS,10).map(gp).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎯 Capture !", it=>TC[it.t![0]]||"#888", res2=>capturePoke(res2 as Pokemon, "✨ "+res2.n+" capturé !", finRoute)); }
+      else if (a==="fish") { const pool = sampleArr(FISH_IDS,8).map(gp).filter(Boolean); showWheel(pool, Math.floor(Math.random()*pool.length), "🎣 Pêche !", ()=>"#3498db", res2=>capturePoke(res2 as Pokemon, "🎣 "+res2.n+" pêché !", finRoute)); }
       else if (a==="trainer") {
         const rt: FoePokemon[] = []; for (let i=0;i<Math.floor(Math.random()*2)+1;i++) { const rp=gp(CATCH_IDS[Math.floor(Math.random()*CATCH_IDS.length)]); if(rp)rt.push({n:rp.n,t:rp.t}); }
-        if(!rt.length) rt.push({n:"Keunotor",t:["Normal"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Dresseur !"); setPhase("cpre");
+        if(!rt.length) rt.push({n:"Keunotor",t:["Normal"]}); setCCtx({nm:"Dresseur",foes:rt,d:-0.05,ctx:"rt",spr:"acetrainer-gen4"}); setMsg("Un Dresseur te défie !"); setPhase("cpre");
       }
       else if (a==="shop") {
-        const its = badges.length>=8 ? [{l:"Potion",k:"p"},{l:"Super Potion",k:"sp"},{l:"Rappel",k:"r"}] : [{l:"Potion",k:"p"},{l:"Super Potion",k:"sp"},{l:"Pokéball",k:"b"},{l:"Rappel",k:"r"}];
-        showWheel(its, Math.floor(Math.random()*its.length), "🛒 Shop !", (_,i) => ["#e74c3c","#e67e22","#3498db","#f1c40f"][i], res2 => { setInv(v=>{const nv={...v}; nv[res2.k as keyof InvState]++; return nv;}); setMsg(res2.l+" obtenue !"); finRoute(); });
+        // CORRECTION SHOP ICI (label)
+        const its = badges.length>=8 ? [{label:"Potion",k:"p"},{label:"Super Potion",k:"sp"},{label:"Rappel",k:"r"}] : [{label:"Potion",k:"p"},{label:"Super Potion",k:"sp"},{label:"Pokéball",k:"b"},{label:"Rappel",k:"r"}];
+        showWheel(its, Math.floor(Math.random()*its.length), "🛒 Shop !", (_,i) => ["#e74c3c","#e67e22","#3498db","#f1c40f"][i], res2 => { setInv(v=>{const nv={...v}; nv[res2.k as keyof InvState]++; return nv;}); setMsg("🎁 "+res2.label+" obtenue !"); finRoute(); });
       }
       else if (a==="special") {
         const evts = badges.length>=8 ? [{label:"Objet",a:"it"},{label:"Dresseur secret",a:"sc"},{label:"Œuf",a:"eg"}] : SPECIAL_EVENTS;
         showWheel(evts, Math.floor(Math.random()*evts.length), "⭐ Événement !", (_,i) => ["#f1c40f","#e91e63","#9b59b6","#00bcd4","#ff5722","#4caf50"][i], res2 => {
           const sa=res2.a;
-          if (sa==="fo") { const f=gp(Math.random()>0.5?408:410); if(f) capturePoke(f,"Fossile "+f.n+" !",finRoute); else finRoute(); }
-          else if (sa==="eg") { const b=gp(BABY_IDS[Math.floor(Math.random()*BABY_IDS.length)]); if(b) capturePoke(b,"Œuf "+b.n+" !",finRoute); else finRoute(); }
+          if (sa==="fo") { const f=gp(Math.random()>0.5?408:410); if(f) capturePoke(f,"🦴 Fossile "+f.n+" !",finRoute); else finRoute(); }
+          else if (sa==="eg") { const b=gp(BABY_IDS[Math.floor(Math.random()*BABY_IDS.length)]); if(b) capturePoke(b,"🥚 Œuf "+b.n+" !",finRoute); else finRoute(); }
           else if (sa==="lg") { const ml=LEGS.filter(l=>[483,484,487].indexOf(l[0])===-1); const l=ml[Math.floor(Math.random()*ml.length)]; const p=gp(l[0]); if(p&&Math.random()<0.35) capturePoke(p,"🌟 "+p.n+" !",finRoute); else { setMsg("S'enfuit..."); finRoute(); } }
-          else if (sa==="it") { setInv(v=>({...v,sp:v.sp+2})); setMsg("2 Super Potions !"); finRoute(); }
-          else if (sa==="tr") { if(team.length>0){const ri=Math.floor(Math.random()*team.length);const np=gp(CATCH_IDS[Math.floor(Math.random()*CATCH_IDS.length)]);if(np){setTeam(t=>{const c=[...t];c[ri]=makePoke(np);return c;});setMsg("Échange : "+np.n+" !");}} finRoute(); }
-          else if (sa==="sc") { setCCtx({nm:"Mystère",foes:[{n:"Carchacrok",t:["Dragon","Sol"]},{n:"Lucario",t:["Combat","Acier"]}],d:0.05,ctx:"rt",spr:"acetrainer-gen4dp"}); setMsg("Dresseur fort !"); setPhase("cpre"); }
+          else if (sa==="it") { setInv(v=>({...v,sp:v.sp+2})); setMsg("🎁 2 Super Potions !"); finRoute(); }
+          else if (sa==="tr") { if(team.length>0){const ri=Math.floor(Math.random()*team.length);const np=gp(CATCH_IDS[Math.floor(Math.random()*CATCH_IDS.length)]);if(np){setTeam(t=>{const c=[...t];c[ri]=makePoke(np);return c;});setMsg("🔄 Échange mystère :\n"+np.n+" reçu !");}} finRoute(); }
+          else if (sa==="sc") { setCCtx({nm:"Mystère",foes:[{n:"Carchacrok",t:["Dragon","Sol"]},{n:"Lucario",t:["Combat","Acier"]}],d:0.05,ctx:"rt",spr:"acetrainer-gen4dp"}); setMsg("Dresseur d'élite !"); setPhase("cpre"); }
         });
       }
       else if (a==="mystery") { const rares = PD.filter(p => p[2].some(t => ["Dragon","Spectre","Acier"].includes(t))); const pk = gp(rares[Math.floor(Math.random()*rares.length)][0]); if (pk) capturePoke(pk, "✨ "+pk.n+" !", finRoute); else finRoute(); }
-      else { setMsg("Rien..."); finRoute(); }
+      else { setMsg("Rien à signaler..."); finRoute(); }
     });
   }
 
   function doLeg() {
     const legs = [gp(483),gp(484)].filter(Boolean);
     showWheel(legs, Math.floor(Math.random()*legs.length), "🌟 Légendaire ?", it => it.id===483?"#4a90d9":"#d94a8c", res => {
-      setMsg(res.n+" apparaît ! (40%)");
+      setMsg(res.n+" apparaît ! (40% capture)");
       showWheel([{label:"Capturé !",val:true},{label:"Enfui...",val:false}], Math.random()<0.4?0:1, "Capture", it=>it.val?"#f1c40f":"#e74c3c", c => {
         if(c.val) capturePoke(res as Pokemon,"🌟 "+res.n+" capturé !",()=>setPhase("msg")); else {setMsg("Il s'enfuit...");setPhase("msg");}
       }, [40,60]);
@@ -508,159 +502,162 @@ export default function App() {
 
   /* ═══════════════ RENDER ═══════════════ */
   return (
-    <div style={{height:"100dvh",background:"linear-gradient(180deg,#0f0c29,#1a1a2e 50%,#16213e)",fontFamily:"'Trebuchet MS',sans-serif",color:"#f0e6d3",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
+    <div style={{height:"100dvh",backgroundColor:"#e0e0e0",backgroundImage:"radial-gradient(#c0c0c0 1px, transparent 1px)",backgroundSize:"20px 20px",fontFamily:"'Courier New', Courier, monospace",color:"#333",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
       
-      {/* HEADER COMPACT */}
-      <div style={{background:"rgba(0,0,0,0.6)",borderBottom:"2px solid #e74c3c",padding:"8px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0,zIndex:10}}>
+      {/* HEADER THEME */}
+      <div style={{background:"#e53935",borderBottom:"4px solid #b71c1c",padding:"8px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0,zIndex:10,color:"#fff",boxShadow:"0 2px 10px rgba(0,0,0,0.2)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:22}}>⚡</span>
+          <span style={{fontSize:22,textShadow:"1px 1px 0 #b71c1c"}}>⚡</span>
           <div>
-            <div style={{fontSize:16,fontWeight:900}}>POKÉMON</div>
-            <div style={{fontSize:9,color:"#e74c3c",fontWeight:700,letterSpacing:1}}>RANDOMIZER</div>
+            <div style={{fontSize:18,fontWeight:900,textShadow:"1px 1px 0 #b71c1c"}}>POKÉMON</div>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:"#ffcdd2"}}>RANDOMIZER</div>
           </div>
         </div>
-        <button onClick={() => setMenuOpen(!menuOpen)} style={{padding:"6px 10px",fontSize:18,cursor:"pointer",background:"transparent",color:"#fff",border:"1px solid rgba(255,255,255,.2)",borderRadius:6}}>☰</button>
+        <button onClick={() => setMenuOpen(!menuOpen)} style={{padding:"4px 8px",fontSize:18,cursor:"pointer",background:"#c62828",color:"#fff",border:"2px solid #b71c1c",borderRadius:6,fontWeight:"bold"}}>☰</button>
         {menuOpen && (
-          <div style={{position:"absolute",right:16,top:56,background:"#1a1a2e",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:8,zIndex:20,boxShadow:"0 8px 24px rgba(0,0,0,.5)"}}>
-            <button onClick={() => { reset(); setMenuOpen(false); }} style={btnStyle("#e74c3c","#c0392b")}>🔄 Reset</button>
+          <div style={{...panelStyle, position:"absolute",right:16,top:56,zIndex:20,padding:12}}>
+            <button onClick={() => { reset(); setMenuOpen(false); }} style={btnStyle("#e53935","#b71c1c")}>🔄 Reset Partie</button>
           </div>
         )}
       </div>
       {menuOpen && <div onClick={() => setMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:9}} />}
 
-      {/* 3 COLONNES SUR DESKTOP / 1 COLONNE SUR MOBILE */}
-      <div style={{flex:1,display:"flex",flexDirection:mob?"column":"row",overflow:"hidden"}}>
+      {/* ZONE CENTRALE */}
+      <div style={{flex:1,display:"flex",flexDirection:mob?"column":"row",overflow:"hidden",padding:mob?4:12,gap:mob?4:12}}>
         
-        {/* COLONNE GAUCHE (Desktop: Stats) / TOPBAR ÉLARGIE (Mobile) */}
-        <div style={{
-          width: mob ? "100%" : 220, flexShrink: 0,
-          background: "rgba(0,0,0,0.3)",
-          borderRight: mob ? "none" : "2px solid rgba(255,255,255,0.05)",
-          borderBottom: mob ? "1px solid rgba(255,255,255,0.1)" : "none",
-          padding: mob ? "10px 14px" : "20px",
-          display:"flex", flexDirection: "column", gap: mob ? 8 : 24,
-          zIndex: 5
-        }}>
-          {/* Progress */}
-          <div style={{display:"flex",flexDirection:mob?"row":"column",alignItems:"center",gap:mob?8:4}}>
-            <div style={{fontSize:mob?16:24}}>🧢</div>
-            <div style={{width:"100%",height:6,background:"rgba(255,255,255,.1)",borderRadius:3,flex:1}}><div style={{height:"100%",width:`${(step/STORY.length)*100}%`,background:"#e74c3c",borderRadius:3}}/></div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,.4)",minWidth:30,textAlign:"right"}}>{step}/{STORY.length}</div>
-          </div>
-
-          <div style={{display:"flex",flexDirection:mob?"row":"column",gap:mob?12:24}}>
-            {/* Badges */}
-            <div style={{flex:mob?1:"none"}}>
-              <div style={{fontSize:12,fontWeight:800,marginBottom:8,color:"#f1c40f",textAlign:"center"}}>🏅 Badges ({badges.length}/8)</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:mob?2:4}}>
-                {GYMS.map((g,i) => <div key={i} style={{borderRadius:4,padding:"4px 0",textAlign:"center",fontSize:10,fontWeight:700,background:badges.includes(g.bd)?TC[g.tp]:"rgba(255,255,255,.05)",color:badges.includes(g.bd)?"#fff":"rgba(255,255,255,.2)"}}>{badges.includes(g.bd)?"⭐":"—"}</div>)}
+        {/* PANNEAU GAUCHE (Desktop) / TOP (Mobile) */}
+        <div style={{...panelStyle, width: mob ? "100%" : 240, flexShrink: 0, padding: mob ? "6px 10px" : "16px", display:"flex", flexDirection: "column", gap: mob ? 6 : 20, zIndex: 5, overflowY: mob?"visible":"auto"}}>
+          
+          {mob ? (
+            // Mobile: 1 Ligne compacte Info + 1 scroll horizontal équipe
+            <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12}}>
+                <div style={{color:"#f39c12"}}>🏅 {badges.length}/8</div>
+                <div style={{color:"#27ae60"}}>🧪{inv.p} 💊{inv.sp} ⭕{inv.b} 💫{inv.r}</div>
+                <div style={{color:"#333"}}>📍 {step}/{STORY.length}</div>
               </div>
-            </div>
-
-            {/* Inv */}
-            <div style={{flex:mob?1:"none"}}>
-              <div style={{fontSize:12,fontWeight:800,marginBottom:8,color:"#2ecc71",textAlign:"center"}}>🎒 Inventaire</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:mob?4:6}}>
-                {[{i:"🧪",v:inv.p,l:"Pots"},{i:"💊",v:inv.sp,l:"Super"},{i:"⭕",v:inv.b,l:"Balls"},{i:"💫",v:inv.r,l:"Rappels"}].map((it,i) => (
-                  <div key={i} style={{background:"rgba(255,255,255,.06)",borderRadius:6,padding:"6px",textAlign:"center",display:"flex",flexDirection:"column",gap:2}}>
-                    <span style={{fontSize:14,fontWeight:800}}>{it.i} {it.v}</span><span style={{fontSize:9,opacity:0.6}}>{it.l}</span>
+              <div style={{display:"flex",overflowX:"auto",gap:8,paddingBottom:4}}>
+                {[0,1,2,3,4,5].map(i => team[i] ? (
+                  <div key={i} style={{flexShrink:0,border:`2px solid ${TC[team[i].t[0]]||"#ccc"}`,borderRadius:8,background:"#fff",padding:4,display:"flex",alignItems:"center",gap:6,minWidth:120}}>
+                    <img src={sprUrl(team[i].id)} alt="" style={{width:36,height:36,imageRendering:"pixelated"}} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />
+                    <div style={{overflow:"hidden"}}>
+                      <div style={{fontSize:11,fontWeight:"bold",whiteSpace:"nowrap"}}>{team[i].n}</div>
+                      <div style={{fontSize:9,color:"#666"}}>BST {getEffBst(team[i])}</div>
+                    </div>
                   </div>
-                ))}
+                ) : <div key={i} style={{flexShrink:0,width:120,height:48,border:"2px dashed #ccc",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#aaa"}}>Vide</div>)}
               </div>
-            </div>
-          </div>
-
-          {/* Équipe en ligne (Uniquement Mobile) */}
-          {mob && (
-            <div style={{display:"flex",gap:6,justifyContent:"center",alignItems:"center",paddingTop:4,borderTop:"1px solid rgba(255,255,255,0.1)"}}>
-              {[0,1,2,3,4,5].map(i => team[i] ? (
-                <div key={i} style={{width:40,height:40,background:"rgba(255,255,255,.07)",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",borderBottom:`3px solid ${TC[team[i].t[0]]||"#fff"}`}}>
-                  <img src={sprUrl(team[i].id)} alt="" style={{width:36,height:36,imageRendering:"pixelated"}} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />
+            </>
+          ) : (
+            // Desktop: Vertical stats
+            <>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:14,color:"#333",marginBottom:4}}>Progression ({step}/{STORY.length})</div>
+                <div style={{width:"100%",height:8,background:"#ddd",borderRadius:4,border:"1px solid #aaa"}}><div style={{height:"100%",width:`${(step/STORY.length)*100}%`,background:"#e53935",borderRadius:3}}/></div>
+              </div>
+              <div>
+                <div style={{fontSize:14,marginBottom:8,color:"#f39c12",textAlign:"center"}}>🏅 Badges ({badges.length}/8)</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4}}>
+                  {GYMS.map((g,i) => <div key={i} style={{borderRadius:4,padding:"4px 0",textAlign:"center",fontSize:11,background:badges.includes(g.bd)?TC[g.tp]:"#eee",color:badges.includes(g.bd)?"#fff":"#aaa",border:"1px solid #ccc"}}>{badges.includes(g.bd)?"⭐":"—"}</div>)}
                 </div>
-              ) : <div key={i} style={{width:40,height:40,background:"rgba(255,255,255,.02)",borderRadius:6,border:"1px dashed rgba(255,255,255,.1)"}} />)}
-            </div>
+              </div>
+              <div>
+                <div style={{fontSize:14,marginBottom:8,color:"#27ae60",textAlign:"center"}}>🎒 Inventaire</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                  {[{i:"🧪",v:inv.p,l:"Pots"},{i:"💊",v:inv.sp,l:"Super"},{i:"⭕",v:inv.b,l:"Balls"},{i:"💫",v:inv.r,l:"Rappels"}].map((it,i) => (
+                    <div key={i} style={{background:"#eee",border:"1px solid #ccc",borderRadius:6,padding:"6px",textAlign:"center",display:"flex",flexDirection:"column",gap:2}}>
+                      <span style={{fontSize:14}}>{it.i} {it.v}</span><span style={{fontSize:10,color:"#666"}}>{it.l}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
         </div>
 
-        {/* COLONNE CENTRALE (Jeu & Roue) */}
-        <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden",background: "radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%)"}}>
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:mob?10:20,overflowY:"auto"}}>
+        {/* PANNEAU CENTRAL (Jeu & Roue) */}
+        <div style={{...panelStyle, flex:1, display:"flex", flexDirection:"column", position:"relative", overflow:"hidden", padding: mob?8:16}}>
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
             
-            {/* Sprites Combat */}
+            {/* Combat Sprites */}
             {phase !== "wheel" && phase !== "swap" && phase !== "win" && (
-              <div style={{display:"flex",alignItems:"flex-end",gap:mob?30:60,justifyContent:"center",marginBottom:20}}>
-                <img src={trainerSpr("lucas")} style={{width:mob?90:130,transform:"scaleX(-1)",imageRendering:"pixelated"}} alt="Jules" onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />
-                {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{width:mob?90:130,imageRendering:"pixelated"}} alt={cCtx.nm} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />}
+              <div style={{display:"flex",alignItems:"flex-end",gap:mob?20:60,justifyContent:"center"}}>
+                <img src={trainerSpr("lucas")} style={{width:mob?100:140,transform:"scaleX(-1)",imageRendering:"pixelated"}} alt="Jules" onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />
+                {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{width:mob?100:140,imageRendering:"pixelated"}} alt={cCtx.nm} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />}
               </div>
             )}
 
-            {/* La Roue Dynamique */}
+            {/* Roue Responsive (Zéro Scroll garanti) */}
             {phase === "wheel" && wCfg && (
-              <Wheel ref={wheelRef} key={wheelKey} items={wCfg.items} winIdx={wCfg.winIdx} onDone={wCfg.onDone} label={wCfg.label} colFn={wCfg.colFn} sizes={wCfg.sizes} sz={mob?320:450} onStateChange={(s,d) => setWheelState({spinning:s, done:d})} />
+              <div style={{height:"100%", width:"100%", display:"flex", alignItems:"center", justifyContent:"center"}}>
+                 <Wheel ref={wheelRef} key={wheelKey} items={wCfg.items} winIdx={wCfg.winIdx} onDone={wCfg.onDone} label={wCfg.label} colFn={wCfg.colFn} sizes={wCfg.sizes} sz={mob?260:380} onStateChange={(s,d) => setWheelState({spinning:s, done:d})} />
+              </div>
             )}
 
-            {/* Écran d'échange */}
+            {/* Swap */}
             {phase === "swap" && swapData && (
               <div style={{textAlign:"center",width:"100%",maxWidth:400}}>
-                <div style={{fontSize:16,fontWeight:800,marginBottom:10}}>Remplacer par {swapData.poke.n} ?</div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
+                <div style={{fontSize:16,marginBottom:12}}>Remplacer par <strong style={{color:TC[swapData.poke.t[0]]}}>{swapData.poke.n}</strong> ?</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
                   {team.map((p,i) => (
                     <button key={i} onClick={() => {
                       const removed = team[i]; setTeam(t=>{const c=[...t];c[i]=swapData.poke;return c;});
-                      setExtra(swapData.poke.n+" remplace "+removed.n+" !"); setMsg(swapData.afterMsg); setSwapData(null); swapData.afterFn();
-                    }} style={{padding:6,background:"rgba(255,255,255,.08)",border:`2px solid ${TC[p.t[0]]||"#888"}`,borderRadius:6,color:"#fff",cursor:"pointer"}}>
-                      <img src={sprUrl(p.id)} alt="" style={{width:30,height:30}} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}}/>
-                      <div style={{fontSize:11,fontWeight:700}}>{p.n}</div>
+                      setMsg("Remplacement effectué :\n"+swapData.poke.n+" rejoint l'équipe !"); setSwapData(null); swapData.afterFn();
+                    }} style={{padding:6,background:"#fff",border:`2px solid ${TC[p.t[0]]||"#888"}`,borderRadius:6,cursor:"pointer"}}>
+                      <img src={sprUrl(p.id)} alt="" style={{width:40,height:40}} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}}/>
+                      <div style={{fontSize:11,fontWeight:"bold"}}>{p.n}</div>
                     </button>
                   ))}
                 </div>
-                <button onClick={() => { setExtra(swapData.poke.n+" refusé."); setMsg(swapData.afterMsg); setSwapData(null); swapData.afterFn(); }} style={btnStyle("#7f8c8d","#6c7a89")}>❌ Refuser</button>
+                <div style={{display:"flex",justifyContent:"center"}}>
+                  <button onClick={() => { setMsg("Tu as refusé "+swapData.poke.n+"."); setSwapData(null); swapData.afterFn(); }} style={btnStyle("#95a5a6","#7f8c8d")}>❌ Garder l'équipe</button>
+                </div>
               </div>
             )}
 
-            {/* Écran de victoire */}
+            {/* Win */}
             {phase === "win" && (
-              <div style={{textAlign:"center",animation:"pulse 2s infinite"}}>
+              <div style={{textAlign:"center"}}>
                 <div style={{fontSize:mob?60:80}}>🏆</div>
-                <div style={{fontSize:mob?24:32,fontWeight:900,color:"#f1c40f",textShadow:"0 2px 10px rgba(241,196,15,0.5)"}}>MAÎTRE DE SINNOH !</div>
+                <div style={{fontSize:mob?22:30,color:"#f39c12"}}>MAÎTRE POKÉMON !</div>
               </div>
             )}
           </div>
         </div>
 
-        {/* COLONNE DROITE (Desktop: Équipe) */}
+        {/* PANNEAU DROIT (Desktop: Équipe) */}
         {!mob && (
-          <div style={{width: 260, flexShrink: 0, background: "rgba(0,0,0,0.4)", borderLeft: "2px solid rgba(255,255,255,0.05)", padding: 20, display:"flex", flexDirection: "column", zIndex: 5 }}>
-            <div style={{fontSize:14,fontWeight:800,marginBottom:12,color:"#3498db",textAlign:"center"}}>👥 Équipe ({team.length}/6)</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8,flex:1}}>
+          <div style={{...panelStyle, width: 260, flexShrink: 0, padding: 16, display:"flex", flexDirection: "column", zIndex: 5}}>
+            <div style={{fontSize:14,marginBottom:12,color:"#3498db",textAlign:"center"}}>👥 Équipe ({team.length}/6)</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,flex:1,overflowY:"auto"}}>
               {[0,1,2,3,4,5].map(i => team[i] ? (
-                <div key={i} style={{background:"rgba(255,255,255,.07)",borderRadius:8,padding:"8px 12px",display:"flex",alignItems:"center",gap:12,borderLeft:`4px solid ${TC[team[i].t[0]]||"#fff"}`}}>
+                <div key={i} style={{background:"#fff",border:`2px solid ${TC[team[i].t[0]]||"#ccc"}`,borderRadius:8,padding:"6px",display:"flex",alignItems:"center",gap:10}}>
                   <img src={sprUrl(team[i].id)} style={{width:48,height:48,imageRendering:"pixelated"}} alt="" onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}}/>
                   <div style={{overflow:"hidden"}}>
-                    <div style={{fontSize:14,fontWeight:700,whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{team[i].n}</div>
-                    <div style={{fontSize:11,opacity:0.6}}>BST {getEffBst(team[i])}</div>
+                    <div style={{fontSize:14,whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{team[i].n}</div>
+                    <div style={{fontSize:11,color:"#666"}}>BST {getEffBst(team[i])}</div>
                   </div>
                 </div>
-              ) : <div key={i} style={{height:64,background:"rgba(255,255,255,.02)",borderRadius:8,border:"1px dashed rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,opacity:0.3}}>Vide</div>)}
+              ) : <div key={i} style={{height:64,background:"#eee",border:"2px dashed #ccc",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#aaa"}}>Vide</div>)}
             </div>
           </div>
         )}
       </div>
 
-      {/* BARRE DU BAS : Actions puis Dialog (Optimisé pour les pouces) */}
-      <div style={{padding:mob?"12px 12px calc(12px + env(safe-area-inset-bottom))":"20px",background:"#2a2a2a",borderTop:"3px solid #e74c3c",display:"flex",flexDirection:"column",gap:12,flexShrink:0,zIndex:10}}>
+      {/* PANNEAU DU BAS : Actions & Boîte de Dialogue (Fixe & Centré) */}
+      <div style={{padding:mob?"8px 8px calc(8px + env(safe-area-inset-bottom))":"16px",background:"#fff",borderTop:"4px solid #505050",display:"flex",flexDirection:"column",gap:10,flexShrink:0,zIndex:10,boxShadow:"0 -4px 10px rgba(0,0,0,0.05)"}}>
         
-        {/* ROW DES BOUTONS D'ACTION (En premier sur mobile pour un accès direct au pouce) */}
-        <div style={{display:"flex",gap:8,justifyContent:mob?"center":"flex-end",flexWrap:"wrap",minHeight:44}}>
+        {/* BOUTONS (Centrés sur Desktop) */}
+        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",minHeight:42,alignItems:"center"}}>
           
           {phase === "wheel" && (
             <button 
               onClick={() => {
                 if (!wheelState.spinning && !wheelState.done) wheelRef.current?.spin();
-                else if (wheelState.done && wCfg) wCfg.onDone(wCfg.items[wCfg.winIdx]);
+                else if (wheelState.done && wCfg) { setMsg(msg); wCfg.onDone(wCfg.items[wCfg.winIdx]); }
               }} 
               disabled={wheelState.spinning}
-              style={{...btnStyle(wheelState.done ? "#3498db" : "#e74c3c", wheelState.done ? "#2980b9" : "#c0392b"), opacity: wheelState.spinning ? 0.5 : 1}}
+              style={{...btnStyle(wheelState.done ? "#3498db" : "#e53935", wheelState.done ? "#2980b9" : "#b71c1c"), opacity: wheelState.spinning ? 0.5 : 1}}
             >
               {wheelState.spinning ? "🎰 Rotation..." : wheelState.done ? "▶️ Continuer" : "🎰 Tourner la roue"}
             </button>
@@ -670,39 +667,40 @@ export default function App() {
           
           {phase === "cpre" && cCtx && (
             <>
-              <div style={{marginRight:"auto",fontSize:13,padding:"0 12px",background:"rgba(0,0,0,0.5)",borderRadius:8,display:"flex",alignItems:"center"}}>
-                Victoire : <strong style={{color:"#f1c40f",marginLeft:6,fontSize:15}}>{Math.round(calcWin(team,cCtx.foes,cCtx.d)*100)}%</strong>
+              <div style={{fontSize:14,padding:"8px 16px",background:"#f8f8f8",border:"2px solid #ccc",borderRadius:6,display:"flex",alignItems:"center"}}>
+                Victoire : <strong style={{color:"#e53935",marginLeft:6}}>{Math.round(calcWin(team,cCtx.foes,cCtx.d)*100)}%</strong>
               </div>
-              <button onClick={doCombat} style={btnStyle("#e74c3c","#c0392b")}>⚔️ Combattre</button>
+              <button onClick={doCombat} style={btnStyle("#e53935","#b71c1c")}>⚔️ Combattre</button>
             </>
           )}
           
-          {phase === "retry" && <button onClick={doCombat} style={btnStyle("#e67e22","#d35400")}>🔄 Retenter</button>}
+          {phase === "retry" && <button onClick={doCombat} style={btnStyle("#f39c12","#d35400")}>🔄 Retenter</button>}
           
           {phase === "go" && (
             <>
-              <button onClick={() => { const isRt = cCtx?.ctx==="rt"; setCCtx(null); if(isRt) finRoute(); else setPhase("msg"); }} style={btnStyle("#2ecc71","#27ae60")}>Continuer</button>
-              <button onClick={reset} style={btnStyle("#e74c3c","#c0392b")}>Reset</button>
+              <button onClick={() => { const isRt = cCtx?.ctx==="rt"; setCCtx(null); if(isRt) finRoute(); else setPhase("msg"); }} style={btnStyle("#27ae60","#2ecc71")}>Continuer quand même</button>
+              <button onClick={reset} style={btnStyle("#e53935","#b71c1c")}>Recommencer</button>
             </>
           )}
           
           {phase === "route" && (
             <>
-              <div style={{marginRight:"auto",fontSize:13,padding:"0 12px",background:"rgba(0,0,0,0.5)",borderRadius:8,display:"flex",alignItems:"center"}}>
-                Tours : <strong style={{marginLeft:6,fontSize:15}}>{rSpins}</strong>
+              <div style={{fontSize:14,padding:"8px 16px",background:"#f8f8f8",border:"2px solid #ccc",borderRadius:6,display:"flex",alignItems:"center"}}>
+                Tours : <strong style={{marginLeft:6}}>{rSpins}</strong>
               </div>
               <button onClick={doRoute} style={btnStyle("#3498db","#2980b9")}>🎯 Avancer</button>
             </>
           )}
           
-          {phase === "sleg" && <button onClick={doLeg} style={btnStyle("#f1c40f","#e67e22")}>🌟 Approcher</button>}
-          {phase === "win" && <button onClick={reset} style={btnStyle("#f1c40f","#e67e22")}>🔄 Rejouer</button>}
+          {phase === "sleg" && <button onClick={doLeg} style={btnStyle("#f1c40f","#f39c12")}>🌟 Approcher</button>}
+          {phase === "win" && <button onClick={reset} style={btnStyle("#f1c40f","#f39c12")}>🔄 Rejouer</button>}
         </div>
 
-        {/* POKEBOX DE DIALOGUE */}
-        <div style={pokeBoxStyle}>
-          <div style={{fontSize:mob?14:16,whiteSpace:"pre-line",lineHeight:1.5}}>{msg || "\u00A0"}</div>
-          {extra && <div style={{fontSize:12,color:"#27ae60",marginTop:4,fontWeight:900}}>{extra}</div>}
+        {/* POKEBOX DE DIALOGUE (Fixe) */}
+        <div style={{background:"#fff",border:"4px solid #505050",borderRadius:8,padding:"10px 14px",minHeight:mob?64:80,display:"flex",alignItems:"center",boxShadow:"inset 0 0 0 2px #e0e0e0"}}>
+          <div style={{fontSize:mob?14:16,whiteSpace:"pre-line",lineHeight:1.5,width:"100%"}}>
+            {msg || "\u00A0"}
+          </div>
         </div>
       </div>
     </div>
