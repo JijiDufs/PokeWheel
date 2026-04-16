@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 
 /* ═══════════════ TYPE CHART ═══════════════ */
@@ -202,7 +204,7 @@ function rivTm(sid: number | null, st: number): FoePokemon[] {
 /* ═══════════════ STORY ═══════════════ */
 interface StoryEvent { y: string; x?: string; s?: number; p?: number; i?: number; }
 const STORY: StoryEvent[] = [
-  {y:"m",x:"Jules, tu te réveilles à Bonaugure.\nTon rival Barry t'attend !"},
+  {y:"m",x:"Ton aventure démarre à Bonaugure.\nTon rival Barry t'attend !"},
   {y:"m",x:"Des Pokémon sauvages attaquent !\nChoisis dans la mallette..."},
   {y:"s"},{y:"r",s:0},
   {y:"m",x:"Le Professeur Sorbier te confie le Pokédex.\nL'aventure commence !"},
@@ -347,18 +349,22 @@ export default function App() {
   const [swapData, setSwapData] = useState<SwapData|null>(null);
   const [retriesLeft, setRetriesLeft] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [ww, setWw] = useState(typeof window !== 'undefined' ? window.innerWidth : 800);
+  
+  // Correction pour le SSR : Valeur par défaut sûre jusqu'au montage client
+  const [ww, setWw] = useState(800); 
   
   useEffect(() => {
+    setWw(window.innerWidth);
     function onResize() { setWw(window.innerWidth); }
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
   const mob = ww < 850;
 
-  // Sécurise l'affichage des images pour éviter les boucles infinies
+  // Protège contre la boucle infinie de chargement d'image
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    if (e.currentTarget.src !== FALLBACK_IMG) e.currentTarget.src = FALLBACK_IMG;
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = FALLBACK_IMG;
   };
 
   function reset() {
