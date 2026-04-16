@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 
 /* ═══════════════ TYPE CHART ═══════════════ */
 const SE: Record<string, Record<string, number>> = {
