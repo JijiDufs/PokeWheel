@@ -170,12 +170,10 @@ const GYMS_GEN2: Gym[] = [
   { nm:"Blue",ct:"Jadielle",bd:"Terre",tp:"Divers",spr:"blue",df:0.15,tm:[{n:"Roucarnage",t:["Normal","Vol"]},{n:"Rhinoféros",t:["Sol","Roche"]},{n:"Léviator",t:["Eau","Vol"]}] }
 ];
 
-const RED_BATTLE = { nm:"Légende Red",spr:"red",tm:[{n:"Pikachu",t:["Électrik"]},{n:"Ronflex",t:["Normal"]},{n:"Florizarre",t:["Plante","Poison"]},{n:"Dracaufeu",t:["Feu","Vol"]},{n:"Tortank",t:["Eau"]}] };
-
-const ROCKET_GEN2 = [
+const ROCKET_GEN2: { nm: string; spr: string; tm: FoePokemon[] }[] = [
   { nm:"Sbire Rocket",spr:"rocketgrunt",tm:[{n:"Nosferapti",t:["Poison","Vol"]},{n:"Rattatac",t:["Normal"]}] },
   { nm:"Commandant Amos",spr:"rocketgrunt",tm:[{n:"Smogogo",t:["Poison"]},{n:"Nostenfer",t:["Poison","Vol"]}] },
-  RED_BATTLE
+  { nm:"Légende Red",spr:"red",tm:[{n:"Pikachu",t:["Électrik"]},{n:"Ronflex",t:["Normal"]},{n:"Florizarre",t:["Plante","Poison"]},{n:"Dracaufeu",t:["Feu","Vol"]},{n:"Tortank",t:["Eau"]}] }
 ];
 
 const E4_GEN2 = [
@@ -200,8 +198,17 @@ const STORY_GEN2: StoryEvent[] = [
   {y:"m",x:"La Tour Cendrée brûle ! Un Pokémon légendaire s'enfuit."},
   {y:"R",p:2,x:"Route 39 — Vers Irisia"},{y:"g",i:4},
   {y:"m",x:"Le Phare d'Oliville a besoin d'aide !"},{y:"g",i:5},
-  {y:"R",p:2,x:"Lac Colère — Le Léviator Rouge !"},{y:"G",i:1},{y:"g",i:6},
+  
+  // ÉVÉNEMENTS SPÉCIAUX AJOUTÉS ICI
+  {y:"R",p:2,x:"Le Lac Colère est agité..."},
+  {y:"E",x:"Un Léviator Rouge scintille au centre du lac !", p: 130}, // Capture du Léviator
+  
+  {y:"G",i:1},{y:"g",i:6},
   {y:"m",x:"La Team Rocket a pris la Tour Radio !"},{y:"G",i:1},{y:"r",s:2},
+  
+  {y:"R",p:3,x:"Tu obtiens l'Arc-en-Ciel'Aile.\nDirection la Tour Ferraille !"},
+  {y:"E",x:"Ho-Oh, le gardien des cieux, descend !", p: 250}, // Capture de Ho-Oh
+
   {y:"R",p:3,x:"Route de Glace — Vers Ébènelle !"},{y:"g",i:7},
   {y:"R",p:3,x:"Route Victoire — Vers le Plateau Indigo !"},{y:"r",s:3},
   {y:"4",i:0},{y:"4",i:1},{y:"4",i:2},{y:"4",i:3},
@@ -234,7 +241,6 @@ export const gen2Data: GameData = {
   id: "gen2", name: "Johto (Génération 2)", themeColor: "#D4AF37",
   SE: SE_GEN2, PD: PD_GEN2, PM: PM_GEN2, BST: BST_GEN2, NBST: NBST_GEN2,
   LEGS: LEGS_GEN2, GYMS: GYMS_GEN2, EVIL_TEAM: ROCKET_GEN2, E4: E4_GEN2, CHAMP: CHAMP_GEN2,
-  FINAL_BOSS: RED_BATTLE,
   STORY: STORY_GEN2,
   CATCH_IDS: [16,19,41,63,66,74,92,152,155,158,161,163,165,167,177,179,187,193,198,206,207,216,220,227,228,231],
   FISH_IDS: [72,129,170,183,194,211,222,223,226],
