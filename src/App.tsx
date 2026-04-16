@@ -58,7 +58,6 @@ export default function App() {
 
   function sprUrl(id: number) {
     if (gen?.id === "gen1") return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/${id}.png`;
-    // Retourne les sprites normaux pour Gen 2 et Gen 4
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   }
 
@@ -69,7 +68,7 @@ export default function App() {
     const ev = gen.STORY[step]; 
     if (!ev) return;
 
-    // Remplacement du mot "Jules" par le vrai nom du personnage dans les textes de l'histoire
+    // Remplacement du mot clé par le vrai nom du personnage dans les textes de l'histoire
     const txt = ev.x ? ev.x.replace(/Jules/g, playerName) : "";
 
     if (ev.y === "m") { 
@@ -78,7 +77,6 @@ export default function App() {
     }
     else if (ev.y === "s") {
       setMsg("La mallette s'ouvre...");
-      // SÉLECTION STRICTE DES STARTERS SELON LA GÉNÉRATION
       let starters: Pokemon[] = [];
       if (gen.id === "gen1") starters = [gen.PM[1], gen.PM[4], gen.PM[7]];
       else if (gen.id === "gen2") starters = [gen.PM[152], gen.PM[155], gen.PM[158]];
@@ -115,7 +113,8 @@ export default function App() {
       setPhase("route"); 
     }
     else if (ev.y === "S") { 
-      const boss = ev.i === 1 && gen.FINAL_BOSS ? gen.FINAL_BOSS : gen.EVIL_TEAM[gen.EVIL_TEAM.length - 1]; 
+      // Correction TS stricte : on utilise l'index "i" s'il est fourni, sinon on prend le dernier élément de EVIL_TEAM.
+      const boss = ev.i !== undefined ? gen.EVIL_TEAM[ev.i] : gen.EVIL_TEAM[gen.EVIL_TEAM.length - 1]; 
       setMsg(`⛰️ ${boss.nm} !`); 
       setCCtx({ nm: boss.nm, foes: boss.tm, d: 0.15, ctx: "spear", spr: boss.spr }); 
       setPhase("cpre"); 
@@ -389,7 +388,7 @@ export default function App() {
         {!mob && (
           <div style={{ ...getPanelStyle(th), width: 260, flexShrink: 0, padding: 16, display: "flex", flexDirection: "column", zIndex: 5 }}>
             <div style={{ fontSize: 14, marginBottom: 12, textAlign: "center" }}>👥 Équipe ({team.length}/6)</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, overflowY: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, overflow: "hidden" }}>
               {[0, 1, 2, 3, 4, 5].map(i => team[i] ? (<div key={i} style={{ background: "rgba(255,255,255,0.5)", border: `2px solid ${th.border}`, borderRadius: 8, padding: "6px", display: "flex", alignItems: "center", gap: 10 }}><img src={sprUrl(team[i].id)} style={{ width: 48, height: 48, imageRendering: "pixelated" }} alt="" onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG }} /><div style={{ overflow: "hidden" }}><div style={{ fontSize: 14, whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{team[i].n}</div><div style={{ fontSize: 11, opacity: 0.7 }}>BST {getEffBst(team[i])}</div></div></div>) : <div key={i} style={{ height: 64, border: `2px dashed ${th.border}`, opacity: 0.5, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>Vide</div>)}
             </div>
           </div>
