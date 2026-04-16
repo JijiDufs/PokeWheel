@@ -49,7 +49,7 @@ export default function App() {
     if (phase === "wheel" && wheelState.done && wCfg) {
       const timer = setTimeout(() => {
         wCfg.onDone(wCfg.items[wCfg.winIdx]);
-      }, 1200); // 1.2 seconde de pause pour lire le résultat
+      }, 700); // 1.2 seconde de pause pour lire le résultat
       return () => clearTimeout(timer);
     }
   }, [phase, wheelState.done, wCfg]);
