@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { GameData, Pokemon, FoePokemon, InvState, CombatCtx, SwapData, WheelItem, Theme } from "./types";
+import { GameData, Pokemon, FoePokemon, InvState, CombatCtx, SwapData, WheelItem } from "./types";
 import { Wheel, WheelRef } from "./components/Wheel";
 import { gen1Data } from "./data/gen1";
 import { gen2Data } from "./data/gen2";
@@ -8,14 +8,17 @@ import { gen4Data } from "./data/gen4";
 const FALLBACK_IMG = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
 const TC: Record<string, string> = { Normal: "#A8A878", Feu: "#F08030", Eau: "#6890F0", Plante: "#78C850", "Électrik": "#F8D030", Glace: "#98D8D8", Combat: "#C03028", Poison: "#A040A0", Sol: "#E0C068", Vol: "#A890F0", Psy: "#F85888", Insecte: "#A8B820", Roche: "#B8A038", Spectre: "#705898", Dragon: "#7038F8", "Ténèbres": "#705848", Acier: "#B8B8D0", "Fée": "#EE99AC" };
 
-const THEMES: Record<string, Theme> = {
+// DÉFINITION LOCALE POUR LE THÈME (POUR NE PAS FAIRE PLANTER VERCEL)
+interface UITheme { bg: string; panelBg: string; border: string; font: string; btnBg: string; text: string; }
+
+const THEMES: Record<string, UITheme> = {
   gen1: { bg: "#9bbc0f", panelBg: "#e0f8d0", border: "#0f380f", font: "'Courier New', Courier, monospace", btnBg: "#8bac0f", text: "#0f380f" },
   gen2: { bg: "#D4AF37", panelBg: "#FFFDD0", border: "#8A6327", font: "'Courier New', Courier, monospace", btnBg: "#B8860B", text: "#4A3511" },
   gen4: { bg: "#D6EAF8", panelBg: "#FFFFFF", border: "#2980B9", font: "Arial, Helvetica, sans-serif", btnBg: "#3498DB", text: "#2C3E50" }
 };
 
-function getPanelStyle(theme: Theme): React.CSSProperties { return { background: theme.panelBg, border: `4px solid ${theme.border}`, borderRadius: 8, boxShadow: `inset 0 0 0 2px rgba(255,255,255,0.5), 0 4px 0 rgba(0,0,0,0.15)`, color: theme.text, fontFamily: theme.font, fontWeight: "bold" }; }
-function btnStyle(theme: Theme, overrideBg?: string, shadow?: string): React.CSSProperties { return { padding: "10px 24px", fontSize: 15, fontFamily: theme.font, fontWeight: "bold", cursor: "pointer", background: overrideBg || theme.btnBg, color: "#fff", border: `2px solid ${theme.border}`, borderRadius: 6, boxShadow: `0 4px 0 ${shadow || theme.border}`, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", minWidth: 120, textTransform: "uppercase" }; }
+function getPanelStyle(theme: UITheme): React.CSSProperties { return { background: theme.panelBg, border: `4px solid ${theme.border}`, borderRadius: 8, boxShadow: `inset 0 0 0 2px rgba(255,255,255,0.5), 0 4px 0 rgba(0,0,0,0.15)`, color: theme.text, fontFamily: theme.font, fontWeight: "bold" }; }
+function btnStyle(theme: UITheme, overrideBg?: string, shadow?: string): React.CSSProperties { return { padding: "10px 24px", fontSize: 15, fontFamily: theme.font, fontWeight: "bold", cursor: "pointer", background: overrideBg || theme.btnBg, color: "#fff", border: `2px solid ${theme.border}`, borderRadius: 6, boxShadow: `0 4px 0 ${shadow || theme.border}`, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", minWidth: 120, textTransform: "uppercase" }; }
 
 function sampleArr(arr: number[], n: number): number[] { const s: Record<number, boolean> = {}; const r: number[] = []; while (r.length < Math.min(n, arr.length)) { const v = arr[Math.floor(Math.random() * arr.length)]; if (!s[v]) { s[v] = true; r.push(v); } } return r; }
 function trainerSpr(name: string) { return `https://play.pokemonshowdown.com/sprites/trainers/${name}.png`; }
@@ -78,7 +81,7 @@ export default function App() {
       else if (gen.id === "gen2") starters = [gen.PM[152], gen.PM[155], gen.PM[158]];
       else starters = [gen.PM[387], gen.PM[390], gen.PM[393]];
       
-      showWheel(starters, Math.floor(Math.random() * 3), "🔥 Starter ?", (it: WheelItem) => TC[it.t![0]], (res: WheelItem) => { 
+      showWheel(starters, Math.floor(Math.random() * 3), "🔥 Starter ?", (it: WheelItem) => it.t?.[0] ? TC[it.t[0]] || "#888" : "#888", (res: WheelItem) => { 
         setSid(res.id!); 
         addPoke(res as Pokemon); 
         setMsg(res.n + ` choisit ${playerName} !`); 
@@ -125,6 +128,11 @@ export default function App() {
       setCCtx({ nm: gen.CHAMP.nm, foes: gen.CHAMP.tm, d: 0.15, ctx: "champ", spr: gen.CHAMP.spr }); 
       setPhase("cpre"); 
     }
+    // GESTION DU NOUVEL ÉVÉNEMENT "E" (Encounter Statique)
+    else if (ev.y === "E") {
+      setMsg(txt);
+      setPhase("static_enc");
+    }
     else if (ev.y === "choice") { 
       setMsg(txt); 
       setPhase("choice"); 
@@ -153,6 +161,16 @@ export default function App() {
   function boostTeamBst() { setTeam(t => t.map(p => ({ ...p, bstMod: (p.bstMod || 1) * 1.03 }))); }
   function nextStep() { setStep(s => s + 1); setPhase("proc"); }
   function showWheel(items: WheelItem[], winIdx: number, label: string, colFn: (item: WheelItem, i: number) => string, onDone: (item: WheelItem) => void, sizes?: number[] | null) { setWCfg({ items, winIdx, label, colFn, onDone, sizes: sizes || null }); setWheelState({ spinning: false, done: false }); setWheelKey(k => k + 1); setPhase("wheel"); }
+
+  // FONCTION POUR LES RENCONTRES STATIQUES (Léviator, Ho-Oh)
+  function doStaticEnc(pid: number) {
+    const pk = gen!.PM[pid];
+    setMsg(pk.n + " attaque ! (40% de chance)");
+    showWheel([{ label: "Capturé !", val: true }, { label: "Enfui...", val: false }], Math.random() < 0.4 ? 0 : 1, "Capture", (it: WheelItem) => it.val ? "#F1C40F" : "#E74C3C", (c: WheelItem) => {
+      if (c.val) capturePoke(pk, "🌟 " + pk.n + " capturé !", nextStep);
+      else { setMsg("Il s'est enfui..."); setPhase("msg"); }
+    }, [40, 60]);
+  }
 
   function doCombat() {
     if (!cCtx) return;
@@ -208,7 +226,7 @@ export default function App() {
     
     showWheel([{ label: "Évolution", val: true }, { label: "Rien", val: false }], Math.random() < evoR ? 0 : 1, "🧬 Évolution ?", (it: WheelItem) => it.val ? "#E67E22" : "#7F8C8D", (res: WheelItem) => {
       if (!res.val) { setMsg(wMsg); if (isRt) finRoute(); else setPhase("msg"); return; }
-      showWheel(evos.map(p => ({ label: p.n, id: p.id, e: p.e, n: p.n, t: p.t, bstMod: p.bstMod })), Math.floor(Math.random() * evos.length), "Qui évolue ?", (it: WheelItem) => TC[it.t![0]] || "#888", (res2: WheelItem) => {
+      showWheel(evos.map(p => ({ label: p.n, id: p.id, e: p.e, n: p.n, t: p.t, bstMod: p.bstMod })), Math.floor(Math.random() * evos.length), "Qui évolue ?", (it: WheelItem) => it.t?.[0] ? TC[it.t[0]] || "#888" : "#888", (res2: WheelItem) => {
         const evo = gen!.PM[res2.e as number]; 
         if (evo) { 
           setTeam(t => t.map(p => p.id === res2.id ? { ...evo, bstMod: p.bstMod || 1 } : p)); 
@@ -240,11 +258,11 @@ export default function App() {
     showWheel(opts, weightedIdx(opts), badges.length >= 8 ? "🏛️ Victoire" : "🎯 Action ?", (it: WheelItem) => ({ catch: "#E74C3C", fish: "#3498DB", trainer: "#E67E22", shop: "#2ECC71", special: "#9B59B6", nothing: "#7F8C8D", mystery: "#F1C40F" } as Record<string, string>)[it.a || ""] || "#888", (res: WheelItem) => {
       const a = res.a;
       if (a === "catch") { 
-        const pool = sampleArr(gen!.CATCH_IDS, 10).map(id => gen!.PM[id]).filter(Boolean) as WheelItem[]; 
-        showWheel(pool, Math.floor(Math.random() * pool.length), "🎯 Capture !", (it: WheelItem) => TC[it.t![0]] || "#888", (res2: WheelItem) => capturePoke(res2 as Pokemon, "✨ " + res2.n + " capturé !", finRoute)); 
+        const pool: WheelItem[] = sampleArr(gen!.CATCH_IDS, 10).map(id => gen!.PM[id]).filter((p): p is Pokemon => !!p).map(p => ({ label: p.n, id: p.id, t: p.t, e: p.e, n: p.n, bstMod: p.bstMod })); 
+        showWheel(pool, Math.floor(Math.random() * pool.length), "🎯 Capture !", (it: WheelItem) => it.t?.[0] ? TC[it.t[0]] || "#888" : "#888", (res2: WheelItem) => capturePoke(res2 as Pokemon, "✨ " + res2.n + " capturé !", finRoute)); 
       }
       else if (a === "fish") { 
-        const pool = sampleArr(gen!.FISH_IDS, 8).map(id => gen!.PM[id]).filter(Boolean) as WheelItem[]; 
+        const pool: WheelItem[] = sampleArr(gen!.FISH_IDS, 8).map(id => gen!.PM[id]).filter((p): p is Pokemon => !!p).map(p => ({ label: p.n, id: p.id, t: p.t, e: p.e, n: p.n, bstMod: p.bstMod })); 
         showWheel(pool, Math.floor(Math.random() * pool.length), "🎣 Pêche !", () => "#3498DB", (res2: WheelItem) => capturePoke(res2 as Pokemon, "🎣 " + res2.n + " pêché !", finRoute)); 
       }
       else if (a === "trainer") {
@@ -253,11 +271,11 @@ export default function App() {
       }
       else if (a === "shop") {
         const its = badges.length >= 8 ? [{ label: "Potion", k: "p" }, { label: "S. Potion", k: "sp" }, { label: "Rappel", k: "r" }] : [{ label: "Potion", k: "p" }, { label: "S. Potion", k: "sp" }, { label: "Pokéball", k: "b" }, { label: "Rappel", k: "r" }];
-        showWheel(its, Math.floor(Math.random() * its.length), "🛒 Boutique !", (_: WheelItem, i: number) => ["#E74C3C", "#E67E22", "#3498DB", "#F1C40F"][i], (res2: WheelItem) => { setInv(v => { const nv = { ...v }; nv[res2.k as keyof InvState]++; return nv; }); setMsg("🎁 " + res2.label + " !"); finRoute(); });
+        showWheel(its, Math.floor(Math.random() * its.length), "🛒 Boutique !", (item: WheelItem, i: number) => { void item; return ["#E74C3C", "#E67E22", "#3498DB", "#F1C40F"][i % 4]; }, (res2: WheelItem) => { setInv(v => { const nv = { ...v }; nv[res2.k as keyof InvState]++; return nv; }); setMsg("🎁 " + res2.label + " !"); finRoute(); });
       }
       else if (a === "special") {
         const evts = badges.length >= 8 ? [{ label: "Objet", a: "it" }, { label: "D. Élite", a: "sc" }, { label: "Œuf", a: "eg" }] : SPECIAL_EVENTS;
-        showWheel(evts, Math.floor(Math.random() * evts.length), "⭐ Événement !", (_: WheelItem, i: number) => ["#F1C40F", "#E91E63", "#9B59B6", "#00BCD4", "#FF5722", "#4CAF50"][i], (res2: WheelItem) => {
+        showWheel(evts, Math.floor(Math.random() * evts.length), "⭐ Événement !", (item: WheelItem, i: number) => { void item; return ["#F1C40F", "#E91E63", "#9B59B6", "#00BCD4", "#FF5722", "#4CAF50"][i % 6]; }, (res2: WheelItem) => {
           const sa = res2.a;
           if (sa === "fo") { setMsg("Rien trouvé..."); finRoute(); }
           else if (sa === "eg") { const b = sampleArr(gen!.BABY_IDS, 1)[0]; if (b) capturePoke(gen!.PM[b], "🥚 Œuf éclos !", finRoute); else { setMsg("Œuf vide..."); finRoute(); } }
@@ -281,7 +299,7 @@ export default function App() {
   }
 
   function doLeg() {
-    const legs = gen!.LEGS.map(l => gen!.PM[l[0]]).filter(Boolean) as WheelItem[];
+    const legs: WheelItem[] = gen!.LEGS.map(l => gen!.PM[l[0]]).filter((p): p is Pokemon => !!p).map(p => ({ label: p.n, id: p.id, t: p.t, e: p.e, n: p.n, bstMod: p.bstMod }));
     if (!legs.length) { setPhase("msg"); return; }
     showWheel(legs, Math.floor(Math.random() * legs.length), "🌟 Légendaire ?", (it: WheelItem) => "#5DADE2", (res: WheelItem) => {
       setMsg(res.n + " apparaît ! (40% capture)");
@@ -347,7 +365,7 @@ export default function App() {
       <div style={{ flex: 1, display: "flex", flexDirection: mob ? "column" : "row", overflow: "hidden", padding: mob ? 4 : 12, gap: mob ? 4 : 12 }}>
         <div style={{ ...getPanelStyle(th), width: mob ? "100%" : 240, flexShrink: 0, padding: mob ? "6px 10px" : "16px", display: "flex", flexDirection: "column", gap: mob ? 6 : 20, zIndex: 5, overflowY: mob ? "visible" : "auto" }}>
           {mob ? (
-            <><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}><div>🏅 {badges.length}/{gen.GYMS.length}</div><div>🧪{inv.p} 💊{inv.sp} ⭕{inv.b} 💫{inv.r}</div><div>📍 {step}/{gen.STORY.length}</div></div><div style={{ display: "flex", overflowX: "auto", gap: 8, paddingBottom: 4 }}>{[0, 1, 2, 3, 4, 5].map(i => team[i] ? (<div key={i} style={{ flexShrink: 0, border: `2px solid ${th.border}`, borderRadius: 8, background: "rgba(255,255,255,0.5)", padding: 4, display: "flex", alignItems: "center", gap: 6, minWidth: 120 }}><img src={sprUrl(team[i].id)} alt="" style={{ width: 36, height: 36, imageRendering: "pixelated" }} onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG }} /><div style={{ overflow: "hidden" }}><div style={{ fontSize: 11, fontWeight: "bold", whiteSpace: "nowrap" }}>{team[i].n}</div><div style={{ fontSize: 9, opacity: 0.7 }}>BST {getEffBst(team[i])}</div></div></div>) : <div key={i} style={{ flexShrink: 0, width: 120, height: 48, border: `2px dashed ${th.border}`, opacity: 0.5, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>Vide</div>)}</div></>
+            <><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}><div>🏅 {badges.length}/{gen.GYMS.length}</div><div>🧪{inv.p} 💊{inv.sp} ⭕{inv.b} 💫{inv.r}</div><div>📍 {step}/{gen.STORY.length}</div></div><div style={{ display: "flex", overflowX: "auto", gap: 8, paddingBottom: 4 }}>{[0, 1, 2, 3, 4, 5].map(i => team[i] ? (<div key={i} style={{ flexShrink: 0, border: `2px solid ${th.border}`, borderRadius: 8, background: "rgba(255,255,255,0.5)", padding: 4, display: "flex", alignItems: "center", gap: 6, minWidth: 120 }}><img src={sprUrl(team[i].id)} alt="" style={{ width: 36, height: 36, imageRendering: "pixelated" }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG }} /><div style={{ overflow: "hidden" }}><div style={{ fontSize: 11, fontWeight: "bold", whiteSpace: "nowrap" }}>{team[i].n}</div><div style={{ fontSize: 9, opacity: 0.7 }}>BST {getEffBst(team[i])}</div></div></div>) : <div key={i} style={{ flexShrink: 0, width: 120, height: 48, border: `2px dashed ${th.border}`, opacity: 0.5, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>Vide</div>)}</div></>
           ) : (
             <><div style={{ textAlign: "center" }}><div style={{ fontSize: 14, marginBottom: 4 }}>Progression ({step}/{gen.STORY.length})</div><div style={{ width: "100%", height: 8, background: "rgba(0,0,0,0.1)", borderRadius: 4, border: `1px solid ${th.border}` }}><div style={{ height: "100%", width: `${(step / gen.STORY.length) * 100}%`, background: th.btnBg, borderRadius: 3 }} /></div></div><div><div style={{ fontSize: 14, marginBottom: 8, textAlign: "center" }}>🏅 Badges ({badges.length}/{gen.GYMS.length})</div><div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4 }}>{gen.GYMS.map((g, i) => <div key={i} style={{ borderRadius: 4, padding: "4px 0", textAlign: "center", fontSize: 11, background: badges.includes(g.bd) ? th.btnBg : "rgba(0,0,0,0.1)", color: badges.includes(g.bd) ? "#fff" : th.text, border: `1px solid ${th.border}` }}>{badges.includes(g.bd) ? "⭐" : "—"}</div>)}</div></div><div><div style={{ fontSize: 14, marginBottom: 8, textAlign: "center" }}>🎒 Inventaire</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>{[{ i: "🧪", v: inv.p, l: "Pots" }, { i: "💊", v: inv.sp, l: "Super" }, { i: "⭕", v: inv.b, l: "Balls" }, { i: "💫", v: inv.r, l: "Rappels" }].map((it, i) => (<div key={i} style={{ background: "rgba(255,255,255,0.5)", border: `2px solid ${th.border}`, borderRadius: 6, padding: "6px", textAlign: "center", display: "flex", flexDirection: "column", gap: 2 }}><span style={{ fontSize: 14 }}>{it.i} {it.v}</span><span style={{ fontSize: 10, opacity: 0.7 }}>{it.l}</span></div>))}</div></div></>
           )}
@@ -355,10 +373,10 @@ export default function App() {
 
         <div style={{ ...getPanelStyle(th), flex: 1, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", padding: mob ? 8 : 16 }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            {phase !== "wheel" && phase !== "swap" && phase !== "win" && phase !== "choice" && (
+            {phase !== "wheel" && phase !== "swap" && phase !== "win" && phase !== "choice" && phase !== "static_enc" && (
               <div style={{ display: "flex", alignItems: "flex-end", gap: mob ? 20 : 60, justifyContent: "center" }}>
-                <img src={trainerSpr(gen.id === "gen1" ? "red" : gen.id === "gen2" ? "ethan" : "lucas")} style={{ width: mob ? 100 : 140, transform: "scaleX(-1)", imageRendering: "pixelated" }} alt="Héros" onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG }} />
-                {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{ width: mob ? 100 : 140, imageRendering: "pixelated" }} alt={cCtx.nm} onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG }} />}
+                <img src={trainerSpr(gen.id === "gen1" ? "red" : gen.id === "gen2" ? "ethan" : "lucas")} style={{ width: mob ? 100 : 140, transform: "scaleX(-1)", imageRendering: "pixelated" }} alt="Héros" onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG }} />
+                {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{ width: mob ? 100 : 140, imageRendering: "pixelated" }} alt={cCtx.nm} onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG }} />}
               </div>
             )}
 
@@ -383,9 +401,9 @@ export default function App() {
               <div style={{ textAlign: "center", width: "100%", maxWidth: 400 }}>
                 <div style={{ fontSize: 16, marginBottom: 12 }}>Remplacer par <strong>{swapData.poke.n}</strong> ?</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 12 }}>
-                  {team.map((p, i) => (<button key={i} onClick={() => { setTeam(t => { const c = [...t]; c[i] = swapData.poke; return c; }); setMsg("Remplacement :\n" + swapData.poke.n + " rejoint l'équipe !"); setSwapData(null); swapData.afterFn(); }} style={{ padding: 6, background: "rgba(255,255,255,0.8)", border: `2px solid ${th.border}`, borderRadius: 6, cursor: "pointer" }}><img src={sprUrl(p.id)} alt="" style={{ width: 40, height: 40 }} onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG }} /><div style={{ fontSize: 11, fontWeight: "bold", color: th.text }}>{p.n}</div></button>))}
+                  {team.map((p, i) => (<button key={i} onClick={() => { setTeam(t => { const c = [...t]; c[i] = swapData.poke; return c; }); setMsg("Remplacement :\n" + swapData.poke.n + " rejoint l'équipe !"); setSwapData(null); swapData!.afterFn(); }} style={{ padding: 6, background: "rgba(255,255,255,0.8)", border: `2px solid ${th.border}`, borderRadius: 6, cursor: "pointer" }}><img src={sprUrl(p.id)} alt="" style={{ width: 40, height: 40 }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG }} /><div style={{ fontSize: 11, fontWeight: "bold", color: th.text }}>{p.n}</div></button>))}
                 </div>
-                <div style={{ display: "flex", justifyContent: "center" }}><button onClick={() => { setMsg("Refus de " + swapData.poke.n + "."); setSwapData(null); swapData.afterFn(); }} style={btnStyle(th, "#7F8C8D", "#34495E")}>❌ Garder l'équipe</button></div>
+                <div style={{ display: "flex", justifyContent: "center" }}><button onClick={() => { setMsg("Refus de " + swapData.poke.n + "."); setSwapData(null); swapData!.afterFn(); }} style={btnStyle(th, "#7F8C8D", "#34495E")}>❌ Garder l'équipe</button></div>
               </div>
             )}
             {phase === "win" && (<div style={{ textAlign: "center" }}><div style={{ fontSize: mob ? 60 : 80 }}>🏆</div><div style={{ fontSize: mob ? 22 : 30 }}>MAÎTRE POKÉMON !</div></div>)}
@@ -396,7 +414,7 @@ export default function App() {
           <div style={{ ...getPanelStyle(th), width: 260, flexShrink: 0, padding: 16, display: "flex", flexDirection: "column", zIndex: 5 }}>
             <div style={{ fontSize: 14, marginBottom: 12, textAlign: "center" }}>👥 Équipe ({team.length}/6)</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, overflow: "hidden" }}>
-              {[0, 1, 2, 3, 4, 5].map(i => team[i] ? (<div key={i} style={{ background: "rgba(255,255,255,0.5)", border: `2px solid ${th.border}`, borderRadius: 8, padding: "6px", display: "flex", alignItems: "center", gap: 10 }}><img src={sprUrl(team[i].id)} style={{ width: 48, height: 48, imageRendering: "pixelated" }} alt="" onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG }} /><div style={{ overflow: "hidden" }}><div style={{ fontSize: 14, whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{team[i].n}</div><div style={{ fontSize: 11, opacity: 0.7 }}>BST {getEffBst(team[i])}</div></div></div>) : <div key={i} style={{ height: 64, border: `2px dashed ${th.border}`, opacity: 0.5, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>Vide</div>)}
+              {[0, 1, 2, 3, 4, 5].map(i => team[i] ? (<div key={i} style={{ background: "rgba(255,255,255,0.5)", border: `2px solid ${th.border}`, borderRadius: 8, padding: "6px", display: "flex", alignItems: "center", gap: 10 }}><img src={sprUrl(team[i].id)} style={{ width: 48, height: 48, imageRendering: "pixelated" }} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG }} /><div style={{ overflow: "hidden" }}><div style={{ fontSize: 14, whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{team[i].n}</div><div style={{ fontSize: 11, opacity: 0.7 }}>BST {getEffBst(team[i])}</div></div></div>) : <div key={i} style={{ height: 64, border: `2px dashed ${th.border}`, opacity: 0.5, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>Vide</div>)}
             </div>
           </div>
         )}
@@ -414,6 +432,7 @@ export default function App() {
           {phase === "msg" && <button onClick={nextStep} style={btnStyle(th)}>▶️ Continuer</button>}
           {phase === "cpre" && cCtx && (<button onClick={doCombat} style={btnStyle(th, "#E3350D")}>⚔️ Combattre</button>)}
           {phase === "retry" && <button onClick={doCombat} style={btnStyle(th, "#F39C12")}>🔄 Retenter</button>}
+          {phase === "static_enc" && <button onClick={() => doStaticEnc(gen!.STORY[step].p!)} style={btnStyle(th, "#3498DB")}>🎯 Approcher</button>}
           {phase === "go" && (<><button onClick={() => { const isRt = cCtx?.ctx === "rt"; setCCtx(null); if (isRt) finRoute(); else setPhase("msg"); }} style={btnStyle(th)}>Avancer quand même</button><button onClick={reset} style={btnStyle(th, "#E3350D")}>Recommencer</button></>)}
           {phase === "route" && (<><div style={{ fontSize: 14, padding: "8px 16px", background: "rgba(255,255,255,0.5)", border: `2px solid ${th.border}`, borderRadius: 6, display: "flex", alignItems: "center", color: th.text }}>Tours : <strong style={{ marginLeft: 6 }}>{rSpins}</strong></div><button onClick={doRoute} style={btnStyle(th)}>🎯 Avancer</button></>)}
           {phase === "sleg" && <button onClick={doLeg} style={btnStyle(th, "#F1C40F")}>🌟 Approcher</button>}
