@@ -55,7 +55,7 @@ export default function App() {
 
   function sprUrl(id: number) {
     if (gen?.id === "gen1") return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/${id}.png`;
-    // Retourne les sprites normaux pour toutes les autres générations
+    if (gen?.id === "gen2") return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ii/crystal/transparent/${id}.png`;
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   }
 
@@ -67,10 +67,13 @@ export default function App() {
     if (ev.y === "m") { setMsg(ev.x!); setPhase("msg"); }
     else if (ev.y === "s") {
       setMsg("La mallette s'ouvre...");
+      
+      // SÉLECTION CORRECTE DES STARTERS
       let starters: Pokemon[] = [];
       if (gen.id === "gen1") starters = [gen.PM[1], gen.PM[4], gen.PM[7]];
       else if (gen.id === "gen2") starters = [gen.PM[152], gen.PM[155], gen.PM[158]];
       else if (gen.id === "gen4") starters = [gen.PM[387], gen.PM[390], gen.PM[393]];
+      else starters = [gen.PM[gen.PD[0][0]], gen.PM[gen.PD[3][0]], gen.PM[gen.PD[6][0]]]; 
       
       showWheel(starters, Math.floor(Math.random()*3), "🔥 Starter ?", it => TC[it.t![0]], res => { setSid(res.id!); addPoke(res as Pokemon); setMsg(res.n+" te choisit !"); setPhase("msg"); });
     }
@@ -178,7 +181,6 @@ export default function App() {
     });
   }
 
-  // ÉCRAN D'ACCUEIL : FORME DE CARTOUCHES
   if (!gen) {
     return (
       <div style={{height:"100dvh", background:"#2C3E50", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"'Courier New', monospace", color:"#FFF", padding: 20}}>
@@ -246,7 +248,11 @@ export default function App() {
         <div style={{...getPanelStyle(th), flex:1, display:"flex", flexDirection:"column", position:"relative", overflow:"hidden", padding: mob?8:16}}>
           <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
             {phase !== "wheel" && phase !== "swap" && phase !== "win" && phase !== "choice" && (
-              <div style={{display:"flex",alignItems:"flex-end",gap:mob?20:60,justifyContent:"center"}}><img src={trainerSpr(gen.id==="gen1"?"red":gen.id==="gen2"?"gold":"lucas")} style={{width:mob?100:140,transform:"scaleX(-1)",imageRendering:"pixelated"}} alt="Héros" onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />{cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{width:mob?100:140,imageRendering:"pixelated"}} alt={cCtx.nm} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />}</div>
+              <div style={{display:"flex",alignItems:"flex-end",gap:mob?20:60,justifyContent:"center"}}>
+                {/* SPRITE DU JOUEUR CORRIGÉ */}
+                <img src={trainerSpr(gen.id==="gen1"?"red":gen.id==="gen2"?"ethan":"lucas")} style={{width:mob?100:140,transform:"scaleX(-1)",imageRendering:"pixelated"}} alt="Héros" onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />
+                {cCtx?.spr && <img src={trainerSpr(cCtx.spr)} style={{width:mob?100:140,imageRendering:"pixelated"}} alt={cCtx.nm} onError={(e)=>{(e.target as HTMLImageElement).src=FALLBACK_IMG}} />}
+              </div>
             )}
             
             {/* ECRAN CHOIX (Gen 2 Kanto) */}
